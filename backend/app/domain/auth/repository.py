@@ -20,4 +20,9 @@ class UserRepository(Protocol):
 
     async def create(self, user: User) -> User: ...
 
+    async def update(self, user: User) -> User:
+        """Persists `role_name`, `hospital_id`, and `is_active` — the fields
+        an admin can change after registration (see AuthService.admin_update)."""
+        ...
+
     async def list_by_hospital(self, hospital_id: UUID) -> list[User]: ...

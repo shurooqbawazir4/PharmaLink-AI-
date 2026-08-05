@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+# Data pipeline image: real-signal ingestion (data/pipeline) + synthetic
+# generation (data/synthetic). Deliberately separate from Dockerfile.backend
+# so the API image stays free of pandas/numpy — see docs/architecture.md.
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+COPY data/pipeline/requirements.txt /app/data/pipeline/requirements.txt
+RUN pip install --upgrade pip && pip install -r /app/data/pipeline/requirements.txt
+
+COPY data /app/data
+WORKDIR /app/data
+
+CMD ["python", "--version"]

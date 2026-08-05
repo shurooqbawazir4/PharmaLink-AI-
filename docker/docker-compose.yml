@@ -51,11 +51,23 @@ services:
       - "8000:8000"
     volumes:
       - ../backend:/app/backend
+      - ../data:/app/data
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  # One-off data pipeline: real-signal ingestion + synthetic generation.
+  # Not part of `up` — run explicitly, e.g.:
+  #   docker compose -f docker/docker-compose.yml --env-file docker/.env run --rm pipeline python pipeline/fetch_fluview.py
+  pipeline:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.pipeline
+    container_name: medcycle_pipeline
+    volumes:
+      - ../data:/app/data
 
 volumes:
   medcycle_db_data:

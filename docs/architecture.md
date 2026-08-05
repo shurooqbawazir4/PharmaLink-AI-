@@ -14,7 +14,7 @@ without a DI framework.
 /frontend   Next.js 15 dashboard (Milestone D)
 /backend    FastAPI service — Clean Architecture (this document)
 /ml         LightGBM/CatBoost/Chronos/OR-Tools package (Milestone C)
-/data       raw/, processed/, synthetic/ data pipeline (Milestone B)
+/data       real-signal ingestion + synthetic generation (see data/README.md)
 /docs       this directory
 /docker     docker-compose.yml, Dockerfiles, .env.example
 /scripts    dev bootstrap scripts
@@ -61,9 +61,63 @@ backend/app/
 - **`api/v1/routers/<module>.py`** — thin: parse request, call a service
   method, translate the returned domain entity into a response schema.
 
-Every future module (Inventory, Transfers, Forecast, Optimization, Expiry,
-Procurement, Analytics, Notifications) repeats this exact five-file shape —
-Auth, Hospitals, and Medicines are the reference implementations.
+Inventory, Transfers, Expiry, Procurement, and Notifications (Milestone B)
+repeat this exact shape — Auth, Hospitals, and Medicines (Milestone A) are
+the reference implementations. Forecast and Optimization (Milestone C)
+will too. Three deliberate variations on the pattern showed up along the
+way:
+
+- **Transactional multi-write methods.** Most repository methods are
+  single-row CRUD, but some actions are inherently "change stock *and*
+  log why" as one atomic unit. `InventoryRepository.record_change` (and
+  `.create(batch, reason=...)`) update `current_stock` and insert the
+  matching `InventoryHistory` row in the same flush — every later
+  "this action changes stock" flow (Transfers, Procurement receipt) calls
+  through these two methods rather than writing history rows ad hoc.
+- **Cross-module application-layer collaboration.** `TransferService`
+  depends on `InventoryRepository` *and* `HospitalRepository` (not just
+  `TransferRepository`); `ProcurementService` depends on `InventoryService`
+  directly (reusing its `receive_stock` use case for `mark_received`
+  rather than duplicating it). Domain layers stay isolated from each
+  other; application layers are allowed to compose across modules — that's
+  where real workflows (a transfer moves *inventory* between *hospitals*)
+  actually live.
+- **Analytics is the one exception to "service depends on a repository
+  interface."** `AnalyticsService` takes an `AsyncSession` directly and
+  runs cross-table aggregate queries — forcing KPI reporting through
+  single-entity repositories would be the wrong abstraction. See
+  `application/analytics/service.py`.
+
+### The naive-now, ML-later pattern (Expiry, Procurement)
+
+Expiry and Procurement each need a "smart" decision — is this batch going
+to expire unused? should we reorder? — that's properly an ML/optimizer
+job, but that job doesn't land until Milestone C. Both modules define a
+`Protocol` for the decision (`domain/expiry/scorer.py::ExpiryRiskScorer`,
+`domain/procurement/recommender.py::ProcurementRecommender`) and ship a
+documented heuristic implementation behind it now
+(`infrastructure/external/naive_expiry_scorer.py`,
+`naive_procurement_recommender.py`), wired in via `core/di.py`
+(`get_expiry_scorer`, `get_procurement_recommender`). Milestone C adds
+`MLExpiryScorer` / the OR-Tools-informed recommender behind the *same*
+interfaces and swaps the DI provider — nothing about the service, API, or
+DB schema changes. This is the same shape as the Chronos→LightGBM
+forecast fallback from the original design, applied a milestone early so
+these modules are demoable now instead of blocked on the ML pipeline.
+
+### Hospital-scoped RBAC
+
+`require_role(...)` (Milestone A) is network-wide — any `pharmacist` can
+touch the shared Medicines catalogue, which is correct, since it isn't
+hospital-specific. Inventory/Transfers/Procurement *are* hospital-specific,
+so `api/v1/deps.py::require_own_hospital_or_admin(user, hospital_id)`
+adds the second check: an `admin` always passes, anyone else must have
+`user.hospital_id == hospital_id`. It's a plain function, not a `Depends`
+factory like `require_role`, because the target hospital id comes from
+different places per route — a path param for hospital-scoped list/detail
+routes, a request-body field for actions like "propose transfer" (source/
+destination are both body fields) — so each router calls it explicitly
+with whichever hospital id is actually in scope for that request.
 
 ## Dependency injection
 
@@ -101,6 +155,20 @@ used to unit-test services with zero database at all.
   `app.state.audit_session_factory` (set once in `main.create_app`, and
   swapped by tests) rather than importing the production session factory
   directly — keeping it just as overridable as everything else.
+
+## Data pipeline separation
+
+`/data/pipeline` (real-signal ingestion) and `/data/synthetic` (generation)
+run in their own minimal Docker image (`docker/Dockerfile.pipeline` —
+pandas/numpy/requests), not inside `/backend`, for the same reason `/ml`
+will get its own package: keeps the API image free of data-science
+dependencies. `backend/scripts/seed_database.py` is the one bridge — it
+runs *inside* the backend container (real DB connection, real ORM models)
+and reads the pipeline's CSV output with the stdlib `csv` module rather
+than pandas, so `/backend` still never gains a pandas dependency. See
+`data/README.md` for the full pipeline and why OpenPrescribing (part of
+the original plan) was dropped for FluView-only after live testing found
+it now blocks automated access entirely.
 
 ## `/backend` ↔ `/ml` boundary (Milestone C)
 

@@ -53,6 +53,22 @@ class SQLAlchemyUserRepository:
         await self._db.flush()
         return self._to_entity(model, role_name=role.name)
 
+    async def update(self, user: User) -> User:
+        role = await self._db.scalar(select(RoleModel).where(RoleModel.name == user.role_name))
+        if role is None:
+            msg = f"Role '{user.role_name}' does not exist — seed roles before assigning them."
+            raise ValueError(msg)
+
+        model = await self._db.get(UserModel, user.id)
+        if model is None:
+            msg = f"User {user.id} not found for update"
+            raise ValueError(msg)
+        model.role_id = role.id
+        model.hospital_id = user.hospital_id
+        model.is_active = user.is_active
+        await self._db.flush()
+        return self._to_entity(model, role_name=role.name)
+
     async def list_by_hospital(self, hospital_id: UUID) -> list[User]:
         stmt = (
             select(UserModel)

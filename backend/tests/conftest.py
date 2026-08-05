@@ -7,14 +7,16 @@ FastAPI app via dependency overrides — no Docker required for this suite.
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from uuid import UUID
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.database import get_db
 from app.infrastructure.db.base import Base
-from app.infrastructure.db.models import RoleModel
+from app.infrastructure.db.models import RoleModel, UserModel
 from app.main import app
 
 # Seeded once per test DB — mirrors the roles the initial migration seeds
@@ -66,3 +68,35 @@ async def client(
 
     app.dependency_overrides.clear()
     app.state.audit_session_factory = original_audit_factory
+
+
+@pytest.fixture
+async def admin_headers(
+    client: AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+) -> dict[str, str]:
+    """Registers a fresh user and promotes it to `admin` directly against
+    the DB — the same bootstrap every real deployment needs, since the
+    `PATCH /auth/users/{id}` promotion endpoint is itself admin-gated (no
+    API path can create the very first admin). `scripts/seed_database.py`
+    does the equivalent for real environments."""
+    email = "test-admin@medcycle.ai"
+    register_response = await client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "password": "supersecret123", "full_name": "Test Admin"},
+    )
+    # session.get() needs an actual UUID, not the JSON response's str form.
+    user_id = UUID(register_response.json()["id"])
+
+    async with session_factory() as session:
+        admin_role = await session.scalar(select(RoleModel).where(RoleModel.name == "admin"))
+        user = await session.get(UserModel, user_id)
+        assert admin_role is not None
+        assert user is not None
+        user.role_id = admin_role.id
+        await session.commit()
+
+    login_response = await client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "supersecret123"}
+    )
+    access_token = login_response.json()["access_token"]
+    return {"Authorization": f"Bearer {access_token}"}

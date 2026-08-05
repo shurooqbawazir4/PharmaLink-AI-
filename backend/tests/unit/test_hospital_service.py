@@ -24,13 +24,13 @@ async def test_create_hospital_normalizes_code_to_uppercase(service: HospitalSer
         city="Riyadh",
         region="Central",
         bed_capacity=250,
-        hospital_type=HospitalType.GENERAL,
+        type=HospitalType.GENERAL,
     )
     assert hospital.code == "STM-01"
 
 
 async def test_create_hospital_rejects_duplicate_code(service: HospitalService) -> None:
-    kwargs = dict(
+    await service.create(
         name="Hospital A",
         code="DUP-01",
         latitude=0.0,
@@ -38,12 +38,20 @@ async def test_create_hospital_rejects_duplicate_code(service: HospitalService) 
         city="City",
         region="Region",
         bed_capacity=100,
-        hospital_type=HospitalType.GENERAL,
+        type=HospitalType.GENERAL,
     )
-    await service.create(**kwargs)
 
     with pytest.raises(HospitalCodeAlreadyExistsError):
-        await service.create(**{**kwargs, "name": "Hospital B"})
+        await service.create(
+            name="Hospital B",
+            code="DUP-01",
+            latitude=0.0,
+            longitude=0.0,
+            city="City",
+            region="Region",
+            bed_capacity=100,
+            type=HospitalType.GENERAL,
+        )
 
 
 async def test_get_missing_hospital_raises_not_found(service: HospitalService) -> None:
@@ -62,7 +70,7 @@ async def test_update_occupancy_rejects_out_of_range_value(service: HospitalServ
         city="City",
         region="Region",
         bed_capacity=100,
-        hospital_type=HospitalType.CLINIC,
+        type=HospitalType.CLINIC,
     )
 
     with pytest.raises(ValueError, match="occupancy_rate"):
@@ -78,7 +86,7 @@ async def test_deactivate_hospital_flips_is_active(service: HospitalService) -> 
         city="City",
         region="Region",
         bed_capacity=50,
-        hospital_type=HospitalType.SPECIALTY,
+        type=HospitalType.SPECIALTY,
     )
 
     deactivated = await service.deactivate(hospital.id)

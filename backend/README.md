@@ -19,6 +19,8 @@ app/
   infrastructure/    SQLAlchemy models + repository implementations
   api/               FastAPI routers + Pydantic schemas
 alembic/           migrations
+scripts/
+  seed_database.py  loads data/synthetic + data/processed CSVs into Postgres
 tests/
   unit/            service tests against in-memory fake repositories
   integration/      full-stack tests against an in-memory SQLite DB

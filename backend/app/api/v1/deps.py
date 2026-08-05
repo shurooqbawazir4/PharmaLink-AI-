@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
+from uuid import UUID
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -53,3 +54,26 @@ def require_role(*allowed_roles: str) -> Callable[[User], Coroutine[Any, Any, Us
         )
 
     return _check
+
+
+def require_own_hospital_or_admin(user: User, hospital_id: UUID) -> None:
+    """Raise `ForbiddenError` unless `user` is an admin or belongs to `hospital_id`.
+
+    Inventory/Transfers/Procurement are hospital-scoped (unlike the
+    network-wide Hospitals/Medicines catalogues), so a `pharmacist` at
+    hospital A must not be able to mutate hospital B's stock. This is a
+    plain function rather than a `Depends(...)` factory like `require_role`
+    because the target hospital id comes from different places per route —
+    a path param for hospital-scoped list/detail routes, a request-body
+    field for actions like "propose transfer" (source/destination are both
+    body fields, not the URL) — so each router calls it explicitly with
+    whichever hospital id is actually in scope for that request, right
+    after resolving `CurrentUser`.
+    """
+    if user.role_name == "admin":
+        return
+    if user.hospital_id != hospital_id:
+        raise ForbiddenError(
+            f"User is not a member of hospital '{hospital_id}' and cannot perform "
+            "this action there."
+        )

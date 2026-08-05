@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.v1.deps import CurrentUser
+from app.api.v1.deps import CurrentUser, require_role
 from app.api.v1.schemas.auth import (
     RefreshTokenRequest,
     TokenResponse,
+    UserAdminUpdateRequest,
     UserLoginRequest,
     UserRead,
     UserRegisterRequest,
@@ -46,3 +48,22 @@ async def refresh(payload: RefreshTokenRequest, auth_service: AuthServiceDep) ->
 @router.get("/me", response_model=UserRead)
 async def get_me(current_user: CurrentUser) -> UserRead:
     return UserRead.model_validate(current_user)
+
+
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserRead,
+    dependencies=[Depends(require_role("admin"))],
+)
+async def admin_update_user(
+    user_id: UUID, payload: UserAdminUpdateRequest, auth_service: AuthServiceDep
+) -> UserRead:
+    """Promote/demote a role and/or (re)assign a hospital — admin-only.
+    The one write path a fresh registration can't reach on its own."""
+    user = await auth_service.admin_update(
+        user_id,
+        role_name=payload.role_name,
+        hospital_id=payload.hospital_id,
+        clear_hospital=payload.clear_hospital,
+    )
+    return UserRead.model_validate(user)

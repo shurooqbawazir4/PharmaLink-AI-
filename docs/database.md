@@ -62,15 +62,25 @@ generic entry will have one), `requires_refrigeration`, `is_controlled`.
 
 **inventory_history** *(hypertable)* — every stock-changing event:
 `change_qty`, `reason` (receipt/consumption/transfer_out/transfer_in/
-expiry_writeoff/adjustment).
+expiry_writeoff/adjustment). This is the stock *ledger*, tied to a specific
+`inventory_id` batch — it's what
+`InventoryRepository.average_daily_consumption()` reads (used by Expiry's
+and Procurement's naive scorers, see `docs/architecture.md`). Distinct from
+**consumption** below; don't confuse the two.
 
 **patients** — deliberately minimal and de-identified (`anonymized_ref`,
 `age_band`, admission/discharge dates, `primary_diagnosis_code`) — this is
 synthetic/aggregate admission context for demand forecasting, not a real
 clinical record; MedCycle never stores real patient identity.
 
-**consumption** *(hypertable)* — the demand signal: `quantity` of a
-medicine used at a hospital, optionally linked to a patient/department.
+**consumption** *(hypertable)* — the demand *signal*: `quantity` of a
+medicine used at a hospital, optionally linked to a patient/department, not
+tied to any specific batch. Feeds the Milestone C forecaster. Distinct from
+`inventory_history`'s `consumption`-reason rows above, which are
+batch-level and feed today's Expiry/Procurement heuristics — the seed
+script (`backend/scripts/seed_database.py`) populates both from the same
+underlying synthetic generation, but a real deployment's two signals could
+drift, which is fine — they answer different questions.
 
 **weather** *(hypertable)* — `region`, `temperature_c`, `humidity_pct`,
 `flu_activity_index` — a demand-forecasting feature (see the AI Modules

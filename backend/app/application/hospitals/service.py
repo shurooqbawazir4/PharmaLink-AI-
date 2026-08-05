@@ -29,7 +29,7 @@ class HospitalService:
         city: str,
         region: str,
         bed_capacity: int,
-        hospital_type: HospitalType,
+        type: HospitalType,  # noqa: A002 — matches Hospital.type/HospitalModel.type/HospitalCreate.type
         occupancy_rate: float = 0.0,
     ) -> Hospital:
         normalized_code = code.strip().upper()
@@ -46,7 +46,7 @@ class HospitalService:
             region=region,
             bed_capacity=bed_capacity,
             occupancy_rate=occupancy_rate,
-            type=hospital_type,
+            type=type,
             is_active=True,
             created_at=datetime.now(UTC),
         )

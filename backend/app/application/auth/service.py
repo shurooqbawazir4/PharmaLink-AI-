@@ -22,7 +22,7 @@ from app.core.security import (
     verify_password,
 )
 from app.domain.auth.entities import User
-from app.domain.auth.exceptions import UserAlreadyExistsError
+from app.domain.auth.exceptions import UserAlreadyExistsError, UserNotFoundError
 from app.domain.auth.repository import UserRepository
 
 # Roles are intentionally open-ended strings backed by `roles.permissions`
@@ -91,6 +91,34 @@ class AuthService:
             access_token=create_access_token(user.id),
             refresh_token=create_refresh_token(user.id),
         )
+
+    async def admin_update(
+        self,
+        user_id: UUID,
+        *,
+        role_name: str | None = None,
+        hospital_id: UUID | None = None,
+        clear_hospital: bool = False,
+    ) -> User:
+        """Promote/demote a user's role and/or (re)assign their hospital —
+        the one write path missing from Milestone A's Auth module, and what
+        Milestone B's hospital-scoped RBAC (`require_own_hospital_or_admin`)
+        needs to actually be exercisable: registration alone can only ever
+        produce a hospital-less `viewer`. Admin-only at the router layer.
+        `clear_hospital=True` explicitly unsets hospital_id (network-wide
+        admins have none); a plain `None` leaves it unchanged."""
+        user = await self._users.get_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError(str(user_id))
+
+        if role_name is not None:
+            user.role_name = role_name
+        if clear_hospital:
+            user.hospital_id = None
+        elif hospital_id is not None:
+            user.hospital_id = hospital_id
+
+        return await self._users.update(user)
 
     async def get_current_user(self, access_token: str) -> User:
         try:

@@ -25,10 +25,12 @@ ml/**/*.ckpt
 ml/**/*.pt
 ml/**/artifacts/
 
-# --- Data (raw/processed data isn't committed; keep dir structure only) ------
+# --- Data (generated CSV output isn't committed; the scripts that make it
+# are — data/synthetic/ holds both generate.py *and* its own CSV output, so
+# this ignores by extension there rather than blanket-excluding the dir) ---
 data/raw/*
 data/processed/*
-data/synthetic/*
+data/synthetic/*.csv
 !data/**/.gitkeep
 
 # --- Editors / OS -------------------------------------------------------------

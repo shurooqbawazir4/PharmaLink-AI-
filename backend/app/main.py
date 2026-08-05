@@ -8,7 +8,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.routers import auth, hospitals, medicines
+from app.api.v1.routers import (
+    analytics,
+    auth,
+    expiry,
+    hospitals,
+    inventory,
+    medicines,
+    notifications,
+    procurement,
+    transfers,
+)
 from app.core.config import settings
 from app.core.database import AsyncSessionLocal
 from app.core.exceptions import register_exception_handlers
@@ -53,6 +63,13 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix=settings.api_v1_prefix)
     app.include_router(hospitals.router, prefix=settings.api_v1_prefix)
     app.include_router(medicines.router, prefix=settings.api_v1_prefix)
+    app.include_router(inventory.router, prefix=settings.api_v1_prefix)
+    app.include_router(transfers.router, prefix=settings.api_v1_prefix)
+    app.include_router(expiry.router, prefix=settings.api_v1_prefix)
+    app.include_router(procurement.suppliers_router, prefix=settings.api_v1_prefix)
+    app.include_router(procurement.purchase_orders_router, prefix=settings.api_v1_prefix)
+    app.include_router(notifications.router, prefix=settings.api_v1_prefix)
+    app.include_router(analytics.router, prefix=settings.api_v1_prefix)
 
     @app.get(f"{settings.api_v1_prefix}/health", tags=["Health"])
     async def health_check() -> dict[str, str]:
