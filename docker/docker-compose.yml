@@ -1,0 +1,61 @@
+# MedCycle AI — local development stack (Milestone A scope: db + redis + api).
+# Frontend, Celery worker/beat, and nginx are added in later milestones.
+#
+# Usage:
+#   cp docker/.env.example docker/.env   # then fill in secrets
+#   docker compose -f docker/docker-compose.yml --env-file docker/.env up
+
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    container_name: medcycle_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-medcycle}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-medcycle_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-medcycle}
+    ports:
+      - "5432:5432"
+    volumes:
+      - medcycle_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-medcycle} -d ${POSTGRES_DB:-medcycle}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: medcycle_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: medcycle_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-medcycle}:${POSTGRES_PASSWORD:-medcycle_dev_password}@db:5432/${POSTGRES_DB:-medcycle}
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../backend:/app/backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  medcycle_db_data:
