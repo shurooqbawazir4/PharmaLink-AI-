@@ -11,7 +11,7 @@ boundaries, a **Repository Pattern**, an explicit **Service Layer**, and
 without a DI framework.
 
 ```
-/frontend   Next.js 15 dashboard (Milestone D)
+/frontend   Next.js 15 dashboard — all 10 spec pages (see §Frontend below)
 /backend    FastAPI service — Clean Architecture (this document)
 /ml         LightGBM forecaster + OR-Tools transfer optimizer (Milestone C)
 /data       real-signal ingestion + synthetic generation (see data/README.md)
@@ -272,6 +272,65 @@ alongside `backend` in `docker-compose.yml`. Periodic/scheduled execution
 (celery beat) is deferred to Milestone E; today, tasks are triggered
 manually (`docker compose run --rm backend celery -A app.core.celery_app
 call optimization.run_network`).
+
+## Frontend (Milestone D)
+
+Next.js 15 (App Router) + React 19 + TypeScript + TailwindCSS + shadcn/ui +
+Framer Motion + TanStack Query + React Hook Form/Zod + Recharts. Runs as its
+own dev-mode Docker service (`docker/Dockerfile.frontend`, bind-mounted
+source, `next dev`) — pulled forward from Milestone E's originally-planned
+integration pass, since the standing "Docker only, no local Node" constraint
+means the user can't run or see this milestone's work without it; the
+*production* multi-stage build + nginx reverse proxy remain E's job.
+
+**Module boundaries mirror the backend's, one `features/<module>/` folder per
+backend module** (Auth, Hospitals, Medicines, Inventory, Transfers, Forecast,
+Optimization, Expiry, Procurement, Analytics, Notifications, Assistant) — each
+holds an `api.ts` (typed fetch calls) and `hooks.ts` (TanStack Query wrappers).
+Page components under `app/(app)/` compose these, never call `fetch` directly.
+
+- **Hand-written API client, not OpenAPI-codegen'd.** `lib/types/*.ts` mirrors
+  `backend/app/api/v1/schemas/*.py` 1:1 by hand — kept lean deliberately,
+  matching the backend's "no framework where a plain function suffices" ethos
+  from `core/di.py`. `lib/api-client.ts::apiFetch` is the one place that knows
+  about the `Authorization` header and retry logic: a single-flight
+  refresh-and-retry-once on a 401 (concurrent 401s across multiple in-flight
+  queries all await the same refresh call), logging out only if the refresh
+  token itself is rejected.
+- **Auth token storage: `localStorage` via a Zustand store (`lib/auth-store.ts`),
+  not httpOnly cookies.** The backend issues tokens as a JSON body
+  (`TokenResponse`), not `Set-Cookie`; matching that contract without a backend
+  change means client-side storage. This is XSS-exposed compared to httpOnly
+  cookies — an accepted MVP tradeoff, flagged here as a Milestone E hardening
+  candidate, not silently glossed over.
+- **RBAC is UX-only on the frontend.** `lib/rbac.ts` mirrors
+  `api/v1/deps.py`'s `require_role`/`require_own_hospital_or_admin` exactly
+  (same role lists, same admin-always-passes rule) to decide what to
+  hide/disable, and `hooks/useHospitalScope.ts` mirrors
+  `require_own_hospital_or_admin`'s scoping (non-admins locked to their own
+  hospital; admins pick any hospital or network-wide). The backend remains the
+  actual enforcement boundary — every one of these checks is duplicated
+  server-side and would reject the request even if the UI hid the button.
+- **Map: MapLibre GL, not Mapbox GL JS** (`components/map/HospitalMap.tsx`,
+  reused by the Hospitals and Optimization pages for the network map and the
+  AI-recommended-transfer arcs respectively) — MapLibre is Mapbox GL's
+  open-source fork, functionally equivalent for this use case, chosen
+  specifically to avoid a second external API-key dependency alongside Groq.
+- **Page-to-spec mapping isn't 1:1 with backend modules.** The spec's 10
+  dashboard pages don't include Inventory or Expiry as their own pages —
+  those are hospital-scoped, so they live inside a **hospital drill-down**
+  on the Hospitals page (`features/hospitals/components/HospitalDrilldown.tsx`)
+  rather than getting invented pages of their own. Analytics/Sustainability
+  split the spec's 7 "Analytics" KPIs between an operational/financial page
+  (Analytics) and an environmental/redistribution-story page
+  (Sustainability) — see `docs/database.md`'s "Derived KPI fields" section
+  for the real numbers backing the latter.
+- **Testing scope**: Vitest + React Testing Library covering the API client
+  (including the 401-refresh-retry path), the auth store, the RBAC helpers,
+  and a handful of representative components (`frontend/tests/`) — not full
+  per-page coverage, and no browser e2e this milestone. Consistent with the
+  backend's own choice not to unit-test `AnalyticsService` directly
+  (Milestone B/C), relying on integration/live coverage instead.
 
 ## Why these tradeoffs
 

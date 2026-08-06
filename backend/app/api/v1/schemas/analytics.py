@@ -19,3 +19,8 @@ class KPISummaryRead(BaseModel):
     inventory_turnover_ratio: float | None
     alerts_by_severity: dict[str, int]
     alerts_unresolved_count: int
+    # --- Sustainability-page numbers (Milestone D) ---------------------------
+    expiry_value_prevented: float
+    medicine_units_redistributed: int
+    co2_saved_kg_estimate: float
+    patients_impacted_count: int

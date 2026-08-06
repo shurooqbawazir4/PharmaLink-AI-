@@ -1,5 +1,6 @@
 # MedCycle AI — local development stack.
-# Frontend, celery beat (scheduling), and nginx are added in Milestone E.
+# Frontend runs here in dev mode (Milestone D); a production build + nginx
+# reverse proxy, plus celery beat (scheduling), are added in Milestone E.
 #
 # Usage:
 #   cp docker/.env.example docker/.env   # then fill in secrets
@@ -80,6 +81,24 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    container_name: medcycle_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app/frontend
+      - /app/frontend/node_modules
+      - /app/frontend/.next
+    depends_on:
+      - backend
 
   # One-off data pipeline: real-signal ingestion + synthetic generation.
   # Not part of `up` — run explicitly, e.g.:

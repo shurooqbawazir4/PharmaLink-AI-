@@ -6,12 +6,13 @@ procurement across a hospital network, and explains every recommendation
 through an LLM assistant — built to reduce medicine waste and prevent
 stockouts.
 
-> Status: **Milestone C** complete — the full backend (Auth, Hospitals,
+> Status: **Milestone D** complete — the full backend (Auth, Hospitals,
 > Medicines, Inventory, Transfers, Expiry, Procurement, Analytics,
 > Notifications), a real-signal + synthetic data pipeline, a seeded demo
 > dataset, a trained LightGBM demand forecaster, an OR-Tools network
-> transfer optimizer, and a Groq-backed LLM explanation/assistant layer
-> are live and tested. See [Roadmap](#roadmap) below.
+> transfer optimizer, a Groq-backed LLM explanation/assistant layer, and a
+> Next.js dashboard covering all 10 spec pages are live and tested. See
+> [Roadmap](#roadmap) below.
 
 ## Why
 
@@ -26,7 +27,7 @@ prevent) rather than generic dashboards.
 
 | Layer | Stack |
 |---|---|
-| Frontend | Next.js 15, React 19, TypeScript, TailwindCSS, shadcn/ui, Framer Motion, TanStack Query, Recharts, Mapbox *(Milestone D)* |
+| Frontend | Next.js 15, React 19, TypeScript, TailwindCSS, shadcn/ui, Framer Motion, TanStack Query, React Hook Form/Zod, Recharts, MapLibre GL |
 | Backend | FastAPI, Python 3.12, Pydantic v2, SQLAlchemy 2.0 (async), Alembic, Celery, Redis |
 | Database | PostgreSQL + TimescaleDB |
 | ML | LightGBM (quantile demand forecasting), OR-Tools (network transfer optimization), scikit-learn, pandas. Chronos is a documented, not-yet-implemented swap point — see [docs/architecture.md](docs/architecture.md) |
@@ -44,7 +45,7 @@ Clean Architecture + DDD: `domain` (entities, repository interfaces) →
 [docs/database.md](docs/database.md). Data pipeline: [data/README.md](data/README.md).
 
 ```
-/frontend   Next.js dashboard                    (Milestone D)
+/frontend   Next.js dashboard — all 10 spec pages
 /backend    FastAPI service — Clean Architecture
 /ml         LightGBM forecaster + OR-Tools transfer optimizer
 /data       Real-signal ingestion + synthetic generation
@@ -68,6 +69,12 @@ answers freeform ops questions grounded in live KPIs/alerts — never
 predicts a number itself), **Analytics** (KPI reporting), **Notifications**
 (alerts, raised internally by Inventory/Expiry/Optimization).
 
+The frontend covers the spec's 10 dashboard pages — Dashboard, Medicines,
+Hospitals (+ a per-hospital inventory/expiry drill-down), Forecast,
+Optimization, Alerts, Procurement, Analytics, Sustainability, AI Assistant —
+plus Login/Register, dark mode, and a hospital-network map. Full design
+writeup: [docs/architecture.md](docs/architecture.md#frontend-milestone-d).
+
 ## Getting started
 
 Requires Docker + Docker Compose. No local Node/Python install needed —
@@ -82,10 +89,13 @@ everything runs in containers.
 ```
 
 This copies `docker/.env.example` → `docker/.env` on first run, builds the
-backend image, starts Postgres/TimescaleDB + Redis, applies migrations
-(creating all tables, converting the 6 time-series tables to TimescaleDB
-hypertables, and seeding the 4 default RBAC roles), then starts the API.
+backend + frontend images, starts Postgres/TimescaleDB + Redis, applies
+migrations (creating all tables, converting the 6 time-series tables to
+TimescaleDB hypertables, and seeding the 4 default RBAC roles), then starts
+the API, the Celery worker, and the Next.js dev server.
 
+- **Dashboard**: http://localhost:3000 (register, then bootstrap yourself to
+  `admin` via the SQL step below, then log in)
 - **API docs (Swagger)**: http://localhost:8000/docs
 - **Health check**: http://localhost:8000/api/v1/health
 
@@ -132,11 +142,14 @@ UPDATE users SET role_id = (SELECT id FROM roles WHERE name = 'admin') WHERE ema
 
 ### Try the AI features
 
-Requires `GROQ_API_KEY` set in `docker/.env` for the assistant endpoints
-(get a free key at [console.groq.com](https://console.groq.com)); forecast
-and optimization need no external key. Use the seeded demo dataset above
-first — the forecaster needs consumption history to train on, and the
-optimizer needs a real surplus/deficit pair to find.
+Every action below is also available from the dashboard (Forecast,
+Optimization, and AI Assistant pages) — these curl examples exercise the
+same endpoints directly. Requires `GROQ_API_KEY` set in `docker/.env` for
+the assistant endpoints (get a free key at
+[console.groq.com](https://console.groq.com)); forecast and optimization
+need no external key. Use the seeded demo dataset above first — the
+forecaster needs consumption history to train on, and the optimizer needs a
+real surplus/deficit pair to find.
 
 ```bash
 # Train (first call only, lazily) + generate a demand forecast
@@ -161,10 +174,16 @@ curl http://localhost:8000/api/v1/assistant/explain/transfer/<transfer_id> \
 
 ```bash
 docker compose -f docker/docker-compose.yml --env-file docker/.env run --rm --no-deps backend pytest -v
+docker compose -f docker/docker-compose.yml --env-file docker/.env run --rm --no-deps frontend npm run lint
+docker compose -f docker/docker-compose.yml --env-file docker/.env run --rm --no-deps frontend npm run typecheck
+docker compose -f docker/docker-compose.yml --env-file docker/.env run --rm --no-deps frontend npm test
 ```
 
-The suite runs against an in-memory SQLite DB (no live Postgres needed) —
-see `backend/tests/conftest.py`.
+The backend suite runs against an in-memory SQLite DB (no live Postgres
+needed) — see `backend/tests/conftest.py`. The frontend suite is Vitest +
+React Testing Library — see `frontend/tests/` and
+[docs/architecture.md](docs/architecture.md#frontend-milestone-d) for its
+scope.
 
 ## Roadmap
 
@@ -173,8 +192,8 @@ see `backend/tests/conftest.py`.
 | A | Architecture, DB schema, Docker skeleton, Auth/Hospitals/Medicines (reference modules) | ✅ Done |
 | B | Inventory, Transfers, Expiry, Procurement, Analytics, Notifications + real-signal (FluView) + synthetic data pipeline | ✅ Done |
 | C | LightGBM demand forecaster, OR-Tools transfer optimizer, forecast-fed Expiry/Procurement, Groq LLM explanation/assistant layer, Celery wiring | ✅ Done |
-| D | Next.js dashboard: all 10 pages, charts, hospital map, AI Assistant chat | Next |
-| E | Full docker-compose (+ frontend, nginx), GitHub Actions CI, full test/doc coverage | Planned |
+| D | Next.js dashboard: all 10 pages, charts, MapLibre hospital map, AI Assistant chat | ✅ Done |
+| E | Production frontend build + nginx, GitHub Actions CI, celery beat, full test/doc coverage | Next |
 
 ## Documentation
 

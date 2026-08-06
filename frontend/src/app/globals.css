@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Design tokens — derived from the validated dataviz-skill reference
+ * palette (see docs/architecture.md for the source hex values and the
+ * validator run). Light is the default `:root`; `.dark` (toggled by
+ * next-themes on <html>) overrides. Chart series colors (--chart-1..8)
+ * are the same fixed-order categorical palette so UI and charts never
+ * drift apart. */
+@layer base {
+  :root {
+    --background: 60 9% 98%;
+    --foreground: 0 0% 4%;
+    --card: 0 0% 99%;
+    --card-foreground: 0 0% 4%;
+    --popover: 0 0% 99%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 213 68% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 45 8% 93%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 45 8% 93%;
+    --muted-foreground: 45 3% 31%;
+    --accent: 213 68% 95%;
+    --accent-foreground: 213 68% 30%;
+    --destructive: 0 61% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 120 86% 34%;
+    --success-foreground: 0 0% 100%;
+    --warning: 41 96% 54%;
+    --warning-foreground: 0 0% 4%;
+    --border: 52 12% 87%;
+    --input: 52 12% 87%;
+    --ring: 213 68% 50%;
+    --radius: 0.625rem;
+    --sidebar: 0 0% 99%;
+    --sidebar-foreground: 0 0% 4%;
+
+    --chart-1: 213 68% 50%;
+    --chart-2: 17 82% 56%;
+    --chart-3: 159 73% 40%;
+    --chart-4: 41 100% 46%;
+    --chart-5: 337 70% 70%;
+    --chart-6: 120 100% 26%;
+    --chart-7: 249 48% 44%;
+    --chart-8: 0 73% 59%;
+  }
+
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 0 0% 100%;
+    --card: 60 2% 10%;
+    --card-foreground: 0 0% 100%;
+    --popover: 60 2% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 213 77% 56%;
+    --primary-foreground: 0 0% 5%;
+    --secondary: 60 2% 16%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 60 2% 16%;
+    --muted-foreground: 55 9% 74%;
+    --accent: 213 40% 20%;
+    --accent-foreground: 213 77% 80%;
+    --destructive: 0 72% 65%;
+    --destructive-foreground: 0 0% 5%;
+    --success: 120 60% 45%;
+    --success-foreground: 0 0% 5%;
+    --warning: 41 96% 54%;
+    --warning-foreground: 0 0% 5%;
+    --border: 60 2% 17%;
+    --input: 60 2% 17%;
+    --ring: 213 77% 56%;
+    --sidebar: 60 2% 8%;
+    --sidebar-foreground: 0 0% 100%;
+
+    --chart-1: 213 77% 56%;
+    --chart-2: 17 70% 50%;
+    --chart-3: 159 73% 36%;
+    --chart-4: 40 100% 39%;
+    --chart-5: 338 61% 58%;
+    --chart-6: 120 100% 26%;
+    --chart-7: 247 69% 72%;
+    --chart-8: 0 72% 65%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* MapLibre GL ships its own chrome styling (maplibre-gl.css) that doesn't
+ * know about our design tokens — retheme just the popup/controls so the
+ * map matches light/dark mode instead of always rendering white. */
+.maplibregl-popup-content {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.maplibregl-popup-tip {
+  border-top-color: hsl(var(--popover)) !important;
+  border-bottom-color: hsl(var(--popover)) !important;
+}
+.maplibregl-popup-close-button {
+  color: hsl(var(--muted-foreground));
+}
+.maplibregl-ctrl-group {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid hsl(var(--border));
+}

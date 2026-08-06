@@ -120,6 +120,34 @@ expiry_risk/low_stock/transfer_suggested), `is_resolved`.
 `entity_id` (parsed from the URL path by `AuditLogMiddleware`),
 `event_metadata` (JSONB — currently just `status_code`), `ip_address`.
 
+## Derived KPI fields (Milestone D, not columns)
+
+`GET /analytics/kpis` (`AnalyticsService.get_kpi_summary`) computes read-only,
+point-in-time aggregates — nothing here is stored. Four fields power the
+Sustainability page, added for Milestone D's frontend without any schema change:
+
+- **`expiry_value_prevented`** — real: `sum(transfers.expiry_prevented_value)` over
+  `COMPLETED` transfers. `expiry_prevented_value` itself is populated by
+  `TransferService.complete` when a transfer draws stock from a batch close to
+  expiring (Milestone B logic — this is the first time it's surfaced in a KPI).
+- **`medicine_units_redistributed`** — real: `sum(transfers.quantity)` over
+  `COMPLETED` transfers.
+- **`co2_saved_kg_estimate`** — an **illustrative estimate**, not a measured value:
+  `medicine_units_redistributed * 1.2` kg, where `1.2` is a documented, rough
+  pharmaceutical-manufacturing carbon-footprint-per-unit constant
+  (`_CO2_KG_PER_UNIT_ESTIMATE` in `application/analytics/service.py`). Labeled as
+  an estimate everywhere it's shown in the UI, same honesty standard as the
+  Chronos stub.
+- **`patients_impacted_count`** — real: `count(DISTINCT consumption.patient_id)` in
+  a trailing 90-day window. `consumption.patient_id` is a nullable FK, so this
+  counts only the subset of consumption rows linked to a specific patient.
+
+**`forecast_accuracy` was considered and deliberately not added.** Forecasts
+predict forward from the moment they're generated; freshly-seeded historical
+consumption data has no elapsed real time to compare a prediction against yet.
+The Analytics page renders this tile as an honest "not enough data yet" empty
+state instead of fabricating a number.
+
 ## Migrations
 
 ```bash
