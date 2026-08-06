@@ -21,8 +21,8 @@ $COMPOSE up -d db redis
 echo "==> Applying migrations"
 $COMPOSE run --rm backend alembic upgrade head
 
-echo "==> Starting backend"
-$COMPOSE up -d backend
+echo "==> Starting backend + celery worker"
+$COMPOSE up -d backend celery_worker
 
 echo
 echo "MedCycle AI backend is up:"

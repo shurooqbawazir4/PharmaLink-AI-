@@ -251,6 +251,9 @@ class TransferModel(UUIDPKMixin, TimestampMixin, Base):
         nullable=False,
         default=TransferStatus.PROPOSED,
     )
+    recommended_by: Mapped[RecommendedBy] = mapped_column(
+        Enum(RecommendedBy, name="recommended_by"), nullable=False, default=RecommendedBy.MANUAL
+    )
     transportation_cost: Mapped[float | None] = mapped_column(Float)
     distance_km: Mapped[float | None] = mapped_column(Float)
     expiry_prevented_value: Mapped[float | None] = mapped_column(Float)

@@ -89,11 +89,22 @@ spec's "seasonality / disease outbreaks" input).
 **transfers** — `source_hospital_id` → `destination_hospital_id`,
 `medicine_id`, `quantity`, `status` (proposed/approved/in_transit/
 completed/cancelled), `transportation_cost`, `expiry_prevented_value` (the
-sustainability-impact number surfaced on the dashboard).
+sustainability-impact number surfaced on the dashboard), `recommended_by`
+(ai/manual — added by `0002_transfers_recommended_by.py`, reusing the same
+`RecommendedBy` Postgres enum type `purchase_orders` already defines,
+`server_default='manual'` so every transfer Milestone B seeded stays
+correctly labeled). Set to `ai` when
+`OptimizationService.optimize_network` proposes the transfer, `manual`
+(the default) for everything a human proposes through
+`POST /transfers/propose` directly.
 
-**forecasts** *(hypertable)* — `horizon_days` (7/30/90), `model_used`
-(chronos/lightgbm — the fallback path), `predicted_demand` with a
-confidence interval.
+**forecasts** *(hypertable)* — `horizon_days`, `model_used` (currently
+always `lightgbm` — `chronos` is reserved for a documented-but-not-yet-
+implemented model, see `docs/architecture.md`), `predicted_demand` with a
+confidence interval. Written by `ForecastService.generate`; read back by
+Expiry/Procurement via `ForecastService.get_daily_rate` as their preferred
+demand signal, falling back to `inventory_history` (below) when a pair
+has no forecast yet.
 
 **expiry_risk** *(hypertable)* — `probability_expires_before_use`,
 `estimated_financial_loss`, `confidence_score` per inventory batch.

@@ -10,7 +10,12 @@ from __future__ import annotations
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID, uuid4
 
+import pandas as pd
+from forecasting.interface import ForecastResult
+
 from app.domain.expiry.entities import ExpiryRiskRecord
+from app.domain.forecast.entities import Forecast
+from app.domain.forecast.repository import ConsumptionRow
 from app.domain.hospitals.entities import Hospital
 from app.domain.inventory.entities import InventoryBatch, InventoryChange
 from app.domain.medicines.entities import Medicine
@@ -24,6 +29,7 @@ from app.domain.shared.enums import (
     TransferStatus,
 )
 from app.domain.transfers.entities import Transfer
+from app.infrastructure.external.llm.provider import Message
 
 
 class FakeHospitalRepository:
@@ -331,3 +337,89 @@ def make_supplier(*, lead_time_days: int = 7, reliability_score: float = 1.0) ->
         is_active=True,
         created_at=datetime.now(UTC),
     )
+
+
+class FakeForecastRepository:
+    """`training_data`/`recent_history_by_pair` are plain public attributes
+    tests populate directly — this repository has no DB behind it to seed,
+    just in-memory lists a test wires up before calling the service."""
+
+    def __init__(self) -> None:
+        self._by_id: dict[UUID, Forecast] = {}
+        self.training_data: list[ConsumptionRow] = []
+        self.recent_history_by_pair: dict[tuple[UUID, UUID], list[ConsumptionRow]] = {}
+
+    async def get_latest(self, hospital_id: UUID, medicine_id: UUID) -> Forecast | None:
+        matches = [
+            f
+            for f in self._by_id.values()
+            if f.hospital_id == hospital_id and f.medicine_id == medicine_id
+        ]
+        return max(matches, key=lambda f: f.generated_at) if matches else None
+
+    async def list_forecasts(
+        self, *, hospital_id: UUID | None = None, medicine_id: UUID | None = None
+    ) -> list[Forecast]:
+        forecasts: list[Forecast] = list(self._by_id.values())
+        if hospital_id is not None:
+            forecasts = [f for f in forecasts if f.hospital_id == hospital_id]
+        if medicine_id is not None:
+            forecasts = [f for f in forecasts if f.medicine_id == medicine_id]
+        return forecasts
+
+    async def create(self, forecast: Forecast) -> Forecast:
+        self._by_id[forecast.id] = forecast
+        return forecast
+
+    async def get_training_data(self) -> list[ConsumptionRow]:
+        return self.training_data
+
+    async def get_recent_history(
+        self, hospital_id: UUID, medicine_id: UUID, *, since: date
+    ) -> list[ConsumptionRow]:
+        return self.recent_history_by_pair.get((hospital_id, medicine_id), [])
+
+
+class FakeForecaster:
+    """A `forecasting.interface.Forecaster` that returns a fixed daily rate
+    — injected into a *real* `MLForecastClient` so its train-once caching
+    behavior is still exercised for real, without needing real LightGBM
+    training data volume (see docs/architecture.md's ml_client boundary)."""
+
+    def __init__(self, daily_rate: float = 10.0) -> None:
+        self.daily_rate = daily_rate
+        self.fit_call_count = 0
+
+    def fit(self, training_frame: pd.DataFrame) -> None:
+        self.fit_call_count += 1
+
+    def predict(
+        self,
+        *,
+        hospital_id: str,
+        medicine_id: str,
+        horizon_days: int,
+        recent_history: pd.DataFrame,
+    ) -> ForecastResult:
+        return ForecastResult(
+            predicted_demand=self.daily_rate * horizon_days,
+            confidence_low=self.daily_rate * horizon_days * 0.8,
+            confidence_high=self.daily_rate * horizon_days * 1.2,
+            model_used="lightgbm",
+        )
+
+
+class FakeLLMProvider:
+    """No live Groq calls in the automated suite — returns a fixed
+    response and records what it was asked, so tests can assert the right
+    grounding data made it into the prompt without needing a real key."""
+
+    def __init__(self, response: str = "This is a canned explanation.") -> None:
+        self.response = response
+        self.last_system_prompt: str | None = None
+        self.last_messages: list[Message] = []
+
+    async def complete(self, *, system_prompt: str, messages: list[Message]) -> str:
+        self.last_system_prompt = system_prompt
+        self.last_messages = messages
+        return self.response

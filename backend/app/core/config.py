@@ -48,10 +48,13 @@ class Settings(BaseSettings):
     # --- CORS ------------------------------------------------------------------
     cors_origins: str = Field(default="http://localhost:3000", alias="CORS_ORIGINS")
 
-    # --- LLM explanation layer (Milestone C) ------------------------------------
-    llm_provider: Literal["anthropic", "openai"] = Field(default="anthropic", alias="LLM_PROVIDER")
-    anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-    openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
+    # --- LLM explanation layer ---------------------------------------------------
+    # Groq speaks the OpenAI wire protocol (chat completions), so the `openai`
+    # SDK works unmodified once `base_url` points at Groq — see
+    # infrastructure/external/llm/groq_provider.py.
+    groq_api_key: str | None = Field(default=None, alias="GROQ_API_KEY")
+    groq_model: str = Field(default="openai/gpt-oss-120b", alias="GROQ_MODEL")
+    groq_base_url: str = Field(default="https://api.groq.com/openai/v1", alias="GROQ_BASE_URL")
 
     @property
     def cors_origins_list(self) -> list[str]:

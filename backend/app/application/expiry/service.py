@@ -1,6 +1,13 @@
 """Expiry-risk use cases. Depends on `InventoryRepository` (for the batch
 and its consumption signal) and the pluggable `ExpiryRiskScorer` — see
 `domain/expiry/scorer.py` for why that's an interface, not a concrete class.
+
+Milestone C addition: given a `ForecastService`, the consumption-rate
+signal fed to the scorer prefers a real forecast (seasonality/trend-aware)
+over the Milestone B historical average, falling back to the average when
+no forecast has been generated yet for that pair — see
+docs/architecture.md for why this is a service-layer change rather than a
+new `ExpiryRiskScorer` implementation.
 """
 
 from __future__ import annotations
@@ -8,6 +15,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
+from app.application.forecast.service import ForecastService
 from app.application.notifications.service import NotificationService
 from app.domain.expiry.entities import ExpiryRiskRecord
 from app.domain.expiry.repository import ExpiryRiskRepository
@@ -29,18 +37,27 @@ class ExpiryService:
         inventory_repository: InventoryRepository,
         scorer: ExpiryRiskScorer,
         notification_service: NotificationService | None = None,
+        forecast_service: ForecastService | None = None,
     ) -> None:
         self._expiry = expiry_repository
         self._inventory = inventory_repository
         self._scorer = scorer
         self._notifications = notification_service
+        self._forecasts = forecast_service
+
+    async def _daily_consumption_signal(self, hospital_id: UUID, medicine_id: UUID) -> float:
+        if self._forecasts is not None:
+            forecast_rate = await self._forecasts.get_daily_rate(hospital_id, medicine_id)
+            if forecast_rate is not None:
+                return forecast_rate
+        return await self._inventory.average_daily_consumption(hospital_id, medicine_id)
 
     async def evaluate_batch(self, inventory_id: UUID) -> ExpiryRiskRecord:
         batch = await self._inventory.get_by_id(inventory_id)
         if batch is None:
             raise InventoryBatchNotFoundError(str(inventory_id))
 
-        avg_daily_consumption = await self._inventory.average_daily_consumption(
+        avg_daily_consumption = await self._daily_consumption_signal(
             batch.hospital_id, batch.medicine_id
         )
         result = self._scorer.score(batch, avg_daily_consumption)

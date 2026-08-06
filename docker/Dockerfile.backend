@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 # Built with repo root as build context (see docker-compose.yml) so it can
-# later also COPY the /ml package once the backend depends on it directly.
+# also COPY the /ml package, which the backend imports directly (see
+# infrastructure/external/ml_client.py and docs/architecture.md).
 FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -9,17 +10,22 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# System deps needed to build asyncpg / psycopg and friends.
+# System deps needed to build asyncpg / psycopg / lightgbm and friends.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libpq-dev curl \
+    && apt-get install -y --no-install-recommends build-essential libpq-dev libgomp1 curl \
     && rm -rf /var/lib/apt/lists/*
+
+# /ml first (own editable install — docker-compose volume-mounts ../ml too,
+# so hot reload works the same way it does for the backend below).
+COPY ml /app/ml
+RUN pip install --upgrade pip && pip install -e /app/ml
 
 # Bring in the backend source, then install it editable so `docker-compose`
 # volume-mounting ./backend over /app/backend for hot reload keeps working
 # without reinstalling (the editable install just points back at the tree).
 COPY backend /app/backend
 WORKDIR /app/backend
-RUN pip install --upgrade pip && pip install -e ".[dev]"
+RUN pip install -e ".[dev]"
 
 EXPOSE 8000
 

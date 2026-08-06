@@ -13,7 +13,7 @@ without a DI framework.
 ```
 /frontend   Next.js 15 dashboard (Milestone D)
 /backend    FastAPI service — Clean Architecture (this document)
-/ml         LightGBM/CatBoost/Chronos/OR-Tools package (Milestone C)
+/ml         LightGBM forecaster + OR-Tools transfer optimizer (Milestone C)
 /data       real-signal ingestion + synthetic generation (see data/README.md)
 /docs       this directory
 /docker     docker-compose.yml, Dockerfiles, .env.example
@@ -88,22 +88,32 @@ way:
   single-entity repositories would be the wrong abstraction. See
   `application/analytics/service.py`.
 
-### The naive-now, ML-later pattern (Expiry, Procurement)
+### The naive-now, forecast-fed-later pattern (Expiry, Procurement)
 
 Expiry and Procurement each need a "smart" decision — is this batch going
-to expire unused? should we reorder? — that's properly an ML/optimizer
-job, but that job doesn't land until Milestone C. Both modules define a
-`Protocol` for the decision (`domain/expiry/scorer.py::ExpiryRiskScorer`,
-`domain/procurement/recommender.py::ProcurementRecommender`) and ship a
-documented heuristic implementation behind it now
+to expire unused? should we reorder? Milestone B shipped both behind a
+`Protocol` (`domain/expiry/scorer.py::ExpiryRiskScorer`,
+`domain/procurement/recommender.py::ProcurementRecommender`) with a
+documented heuristic implementation
 (`infrastructure/external/naive_expiry_scorer.py`,
 `naive_procurement_recommender.py`), wired in via `core/di.py`
-(`get_expiry_scorer`, `get_procurement_recommender`). Milestone C adds
-`MLExpiryScorer` / the OR-Tools-informed recommender behind the *same*
-interfaces and swaps the DI provider — nothing about the service, API, or
-DB schema changes. This is the same shape as the Chronos→LightGBM
-forecast fallback from the original design, applied a milestone early so
-these modules are demoable now instead of blocked on the ML pipeline.
+(`get_expiry_scorer`, `get_procurement_recommender`).
+
+Milestone C does **not** replace these with trained classifiers — there's
+no labeled outcome data (no seeded batch has ever actually been written
+off) to train "will this expire unused?" against, and manufacturing a
+synthetic labeled dataset just to justify a classifier would be worse than
+being honest about the gap. Instead, the real upgrade is one layer up:
+`ExpiryService` and `ProcurementService` now take an optional
+`ForecastService` dependency and ask it for a trained, seasonality-aware
+daily-consumption rate first (`_daily_consumption_signal()` in each
+service), falling back to `InventoryRepository.average_daily_consumption`
+— the same Milestone B historical-average signal — when no forecast
+exists yet for that hospital/medicine pair. Same scorer/recommender
+`Protocol`s, same naive implementations, just fed a better number once one
+is available. The `ExpiryRiskScorer`/`ProcurementRecommender` interfaces
+remain the real swap point for a future trained classifier, should labeled
+outcome data ever exist.
 
 ### Hospital-scoped RBAC
 
@@ -172,14 +182,96 @@ it now blocks automated access entirely.
 
 ## `/backend` ↔ `/ml` boundary (Milestone C)
 
-`/ml` is a plain, installable Python package with no FastAPI/SQLAlchemy
-imports, exposing typed functions (e.g.
-`ml.forecasting.forecast(history: pd.DataFrame, horizon: int) -> ForecastResult`).
-The backend's `infrastructure/external/ml_client.py` adapts domain data
-into what `/ml` expects and back — called directly for fast synchronous
-paths (single expiry-risk score) and from Celery tasks for batch jobs
-(nightly forecast refresh). Model fallback (Chronos → LightGBM) lives
-*inside* `/ml`, invisible to the backend.
+`/ml` is a plain, installable Python package (own `pyproject.toml`) with
+no FastAPI/SQLAlchemy imports — `forecasting/` and `optimization/` are
+top-level packages (not `ml.forecasting`; the dotted-path in the original
+design doc was aspirational, documented as a deliberate deviation in
+`ml_client.py`'s docstring). It's `pip install -e`'d into the backend
+image (`docker/Dockerfile.backend`), so the backend imports it directly —
+`infrastructure/external/ml_client.py::MLForecastClient` is the sole
+adapter, translating domain rows ↔ pandas DataFrames and back into a
+`ForecastResult`. The forecaster trains lazily, once per process
+(`@lru_cache` singleton in `core/di.py::get_ml_forecast_client`).
+
+- **Forecasting** (`ml/forecasting/`): `interface.py` defines the
+  `Forecaster` `Protocol` (`fit`, `predict`) so a different model is a DI
+  swap, not a rewrite. `lightgbm_forecaster.py::LightGBMForecaster` is the
+  real, load-bearing implementation — quantile regression (α = 0.1/0.5/0.9)
+  over lag/rolling-window/day-of-week/flu-index features
+  (`features.py`), predicting a daily rate scaled by `horizon_days` (a
+  documented simplification vs. full recursive multi-step forecasting).
+  `chronos_forecaster.py::ChronosForecaster` is a real, present stub whose
+  `fit`/`predict` raise `NotImplementedError` with the reasoning inline:
+  Chronos needs `torch`+`transformers` (multiple GB of CPU-only deps) for
+  worse-fitting results than LightGBM on this feature-rich tabular data —
+  the swap point from the original spec is real code, not just asserted.
+- **Optimization** (`ml/optimization/transfer_optimizer.py`): the network
+  transfer problem is a classic transportation LP (surplus hospitals →
+  deficit hospitals), solved with OR-Tools' `pywraplp` GLOP solver —
+  maximize total quantity moved, with distance as a tiny tie-breaker
+  coefficient. No MIP/integer constraints needed: transportation-problem
+  LPs with integer supply/demand have integer-optimal solutions by total
+  unimodularity. `solve_network_transfers()` is pure — it takes/returns
+  plain dataclasses (`HospitalState`, `TransferRecommendation`), no DB or
+  domain-entity awareness, so it's unit-testable with zero backend
+  imports.
+
+`application/optimization/service.py::OptimizationService.optimize_network`
+is the backend-side caller: builds `HospitalState`s from
+`InventoryRepository`+`HospitalRepository`+`ForecastService`, runs the
+solver, then reuses `TransferService.propose(..., recommended_by=AI)` for
+each recommendation (not a new transfer-creation path) and raises a
+`transfer_suggested` alert via `NotificationService`. Restricted to
+`admin` only (`require_role`, not hospital-scoped) since one run spans the
+whole network by design.
+
+## LLM explanation layer (Milestone C)
+
+The LLM is strictly **explanation-only** — it never predicts a number,
+only narrates numbers the deterministic pipeline already computed — and
+the code enforces that by giving it nothing else to do: system prompts
+name the constraint explicitly, and every prompt is built from real
+already-computed fields (never blank-slate reasoning).
+
+- **Provider**: `infrastructure/external/llm/provider.py::LLMProvider` is
+  a `Protocol` (`async def complete(system_prompt, messages) -> str`);
+  `groq_provider.py::GroqProvider` implements it against Groq's
+  OpenAI-compatible endpoint (`openai.AsyncOpenAI(base_url=...)`, model
+  `openai/gpt-oss-120b`) — swappable to a different OpenAI-compatible
+  provider by changing `core/config.py` settings and the DI provider,
+  nothing else. Tests inject a `FakeLLMProvider` (canned responses); no
+  automated test makes a live Groq call.
+- **`application/assistant/service.py::AssistantService`** has two
+  capabilities: `explain_transfer`/`explain_purchase_order` (grounds a
+  prompt in one already-proposed recommendation's real fields) and `chat`
+  (answers freeform questions like "what's my highest-risk medicine?"
+  against a context snapshot — KPIs, high-risk expiry batches, unresolved
+  alerts — built via `AnalyticsService`/`ExpiryService`/
+  `NotificationService`). It also depends on `HospitalService` and
+  `MedicineService` for one specific reason: **prompts use hospital and
+  medicine *names*, never raw UUIDs** — resolved before the prompt is
+  built, matching the spec's own example phrasing ("Transferring 420
+  insulin units from Hospital A to Hospital B").
+- Non-admin callers of `POST /assistant/chat` are always scoped to their
+  own hospital regardless of what `hospital_id` they pass in the request
+  body — enforced at the router, same pattern as
+  `require_own_hospital_or_admin` elsewhere.
+
+## Celery (Milestone C)
+
+`core/celery_app.py` wires a `Celery` app (Redis as both broker and result
+backend). Tasks in `infrastructure/tasks/` (`forecast_tasks.py`,
+`optimization_tasks.py`) are thin wrappers: each opens its own
+`AsyncSessionLocal()` and manually constructs the same
+repositories/services the synchronous HTTP endpoints use via `Depends` —
+Celery tasks can't participate in FastAPI's request-scoped DI graph, so
+they build an equivalent one by hand and call the *same* application-layer
+methods (`ForecastService.generate`, `OptimizationService.optimize_network`)
+rather than duplicating any business logic. A `celery_worker` service runs
+alongside `backend` in `docker-compose.yml`. Periodic/scheduled execution
+(celery beat) is deferred to Milestone E; today, tasks are triggered
+manually (`docker compose run --rm backend celery -A app.core.celery_app
+call optimization.run_network`).
 
 ## Why these tradeoffs
 

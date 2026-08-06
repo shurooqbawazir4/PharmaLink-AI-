@@ -3,10 +3,12 @@ lifecycle (recommended -> approved -> ordered -> received).
 
 Depends on `PurchaseOrderRepository`, `SupplierRepository`,
 `InventoryRepository` (for stock/consumption signals — a cross-module
-application-layer collaboration, same as Transfers) and `InventoryService`
+application-layer collaboration, same as Transfers), `InventoryService`
 (reused directly for `mark_received`, since "receive a physical batch" is
 already a well-defined use case there — no reason to duplicate its
-transactional create+history logic here).
+transactional create+history logic here), and (Milestone C) `ForecastService`
+— the same forecast-first, historical-average-fallback signal `ExpiryService`
+uses, see docs/architecture.md.
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ from collections import defaultdict
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
+from app.application.forecast.service import ForecastService
 from app.application.inventory.service import InventoryService
 from app.domain.inventory.entities import InventoryBatch
 from app.domain.inventory.repository import InventoryRepository
@@ -36,12 +39,21 @@ class ProcurementService:
         inventory_repository: InventoryRepository,
         inventory_service: InventoryService,
         recommender: ProcurementRecommender,
+        forecast_service: ForecastService | None = None,
     ) -> None:
         self._orders = order_repository
         self._suppliers = supplier_repository
         self._inventory = inventory_repository
         self._inventory_service = inventory_service
         self._recommender = recommender
+        self._forecasts = forecast_service
+
+    async def _daily_consumption_signal(self, hospital_id: UUID, medicine_id: UUID) -> float:
+        if self._forecasts is not None:
+            forecast_rate = await self._forecasts.get_daily_rate(hospital_id, medicine_id)
+            if forecast_rate is not None:
+                return forecast_rate
+        return await self._inventory.average_daily_consumption(hospital_id, medicine_id)
 
     async def recommend_for_hospital(self, hospital_id: UUID) -> list[PurchaseOrder]:
         """Evaluate every medicine currently stocked at `hospital_id` and
@@ -61,9 +73,7 @@ class ProcurementService:
 
             current_stock = sum(batch.current_stock for batch in medicine_batches)
             safety_stock = sum(batch.safety_stock for batch in medicine_batches)
-            avg_daily_consumption = await self._inventory.average_daily_consumption(
-                hospital_id, medicine_id
-            )
+            avg_daily_consumption = await self._daily_consumption_signal(hospital_id, medicine_id)
             reference_batch = max(medicine_batches, key=lambda batch: batch.created_at)
 
             recommendation = self._recommender.recommend(

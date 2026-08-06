@@ -4,10 +4,12 @@ complete, moving physical stock between hospitals via `InventoryRepository`.
 Depends on `TransferRepository`, `InventoryRepository`, and
 `HospitalRepository` — a legitimate cross-module application-layer
 collaboration (domain layers stay isolated; application layers may
-compose). All three cost/impact numbers below (`distance_km`,
-`transportation_cost`, `expiry_prevented_value`) are naive MVP estimates,
-replaced with ML/OR-Tools-informed numbers in Milestone C behind the same
-`Transfer` fields.
+compose). `distance_km`/`transportation_cost` stay a simple haversine-based
+estimate (still the right unit-cost model at this scale) — Milestone C's
+`OptimizationService` (application/optimization/service.py) is the one
+that got smarter: it calls `propose()` the same way a human does, just
+computed *which* transfers to propose across a whole network via OR-Tools,
+tagging them `recommended_by=RecommendedBy.AI`.
 """
 
 from __future__ import annotations
@@ -19,7 +21,7 @@ from app.domain.hospitals.exceptions import HospitalNotFoundError
 from app.domain.hospitals.repository import HospitalRepository
 from app.domain.inventory.entities import InventoryBatch
 from app.domain.inventory.repository import InventoryRepository
-from app.domain.shared.enums import InventoryChangeReason, TransferStatus
+from app.domain.shared.enums import InventoryChangeReason, RecommendedBy, TransferStatus
 from app.domain.shared.geo import haversine_km
 from app.domain.transfers.entities import Transfer
 from app.domain.transfers.exceptions import (
@@ -30,9 +32,8 @@ from app.domain.transfers.exceptions import (
 )
 from app.domain.transfers.repository import TransferRepository
 
-# Naive placeholders — Milestone C's optimizer replaces both with real,
-# route/carrier-informed numbers behind the same `Transfer.transportation_cost`
-# field, so nothing about the schema/API shape changes later.
+# A simple $/km haversine-based estimate — good enough at this scale; see
+# the module docstring for why this didn't need to get fancier in Milestone C.
 _TRANSPORT_COST_PER_KM = 2.5
 _EXPIRY_RISK_WINDOW_DAYS = 30
 
@@ -56,6 +57,7 @@ class TransferService:
         medicine_id: UUID,
         quantity: int,
         created_by: UUID | None = None,
+        recommended_by: RecommendedBy = RecommendedBy.MANUAL,
     ) -> Transfer:
         if quantity <= 0:
             msg = "quantity must be positive"
@@ -91,6 +93,7 @@ class TransferService:
             status=TransferStatus.PROPOSED,
             created_at=datetime.now(UTC),
             created_by=created_by,
+            recommended_by=recommended_by,
             distance_km=round(distance_km, 2),
             transportation_cost=round(distance_km * _TRANSPORT_COST_PER_KM, 2),
         )

@@ -1,5 +1,5 @@
-# MedCycle AI — local development stack (Milestone A scope: db + redis + api).
-# Frontend, Celery worker/beat, and nginx are added in later milestones.
+# MedCycle AI — local development stack.
+# Frontend, celery beat (scheduling), and nginx are added in Milestone E.
 #
 # Usage:
 #   cp docker/.env.example docker/.env   # then fill in secrets
@@ -52,6 +52,29 @@ services:
     volumes:
       - ../backend:/app/backend
       - ../data:/app/data
+      - ../ml:/app/ml
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: medcycle_celery_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-medcycle}:${POSTGRES_PASSWORD:-medcycle_dev_password}@db:5432/${POSTGRES_DB:-medcycle}
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.core.celery_app worker --loglevel=info
+    volumes:
+      - ../backend:/app/backend
+      - ../data:/app/data
+      - ../ml:/app/ml
     depends_on:
       db:
         condition: service_healthy

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.shared.enums import TransferStatus
+from app.domain.shared.enums import RecommendedBy, TransferStatus
 
 
 class TransferProposeRequest(BaseModel):
@@ -27,6 +27,7 @@ class TransferRead(BaseModel):
     quantity: int
     status: TransferStatus
     created_at: datetime
+    recommended_by: RecommendedBy
     created_by: UUID | None
     distance_km: float | None
     transportation_cost: float | None

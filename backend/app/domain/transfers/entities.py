@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
-from app.domain.shared.enums import TransferStatus
+from app.domain.shared.enums import RecommendedBy, TransferStatus
 
 
 @dataclass(slots=True)
@@ -18,6 +18,7 @@ class Transfer:
     quantity: int
     status: TransferStatus
     created_at: datetime
+    recommended_by: RecommendedBy = RecommendedBy.MANUAL
     created_by: UUID | None = None
     distance_km: float | None = None
     transportation_cost: float | None = None

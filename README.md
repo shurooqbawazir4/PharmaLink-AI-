@@ -6,10 +6,12 @@ procurement across a hospital network, and explains every recommendation
 through an LLM assistant — built to reduce medicine waste and prevent
 stockouts.
 
-> Status: **Milestone B** complete — the full backend (Auth, Hospitals,
+> Status: **Milestone C** complete — the full backend (Auth, Hospitals,
 > Medicines, Inventory, Transfers, Expiry, Procurement, Analytics,
-> Notifications), a real-signal + synthetic data pipeline, and a seeded
-> demo dataset are live and tested. See [Roadmap](#roadmap) below.
+> Notifications), a real-signal + synthetic data pipeline, a seeded demo
+> dataset, a trained LightGBM demand forecaster, an OR-Tools network
+> transfer optimizer, and a Groq-backed LLM explanation/assistant layer
+> are live and tested. See [Roadmap](#roadmap) below.
 
 ## Why
 
@@ -27,8 +29,8 @@ prevent) rather than generic dashboards.
 | Frontend | Next.js 15, React 19, TypeScript, TailwindCSS, shadcn/ui, Framer Motion, TanStack Query, Recharts, Mapbox *(Milestone D)* |
 | Backend | FastAPI, Python 3.12, Pydantic v2, SQLAlchemy 2.0 (async), Alembic, Celery, Redis |
 | Database | PostgreSQL + TimescaleDB |
-| ML | PyTorch, LightGBM, CatBoost, XGBoost, scikit-learn, Chronos, OR-Tools *(Milestone C)* |
-| LLM | Groq (`openai/gpt-oss-120b`, OpenAI-compatible client) — explanation only, never prediction *(Milestone C)* |
+| ML | LightGBM (quantile demand forecasting), OR-Tools (network transfer optimization), scikit-learn, pandas. Chronos is a documented, not-yet-implemented swap point — see [docs/architecture.md](docs/architecture.md) |
+| LLM | Groq (`openai/gpt-oss-120b`, OpenAI-compatible client) — explanation only, never prediction |
 | Data pipeline | pandas, numpy, requests — own image, kept out of the API (see below) |
 | Deployment | Docker, Docker Compose, GitHub Actions |
 
@@ -44,7 +46,7 @@ Clean Architecture + DDD: `domain` (entities, repository interfaces) →
 ```
 /frontend   Next.js dashboard                    (Milestone D)
 /backend    FastAPI service — Clean Architecture
-/ml         Forecasting / optimization package    (Milestone C)
+/ml         LightGBM forecaster + OR-Tools transfer optimizer
 /data       Real-signal ingestion + synthetic generation
 /docs       architecture, database, API, deployment, ML docs
 /docker     docker-compose.yml, Dockerfiles, .env.example
@@ -54,13 +56,17 @@ Clean Architecture + DDD: `domain` (entities, repository interfaces) →
 
 Backend modules live: **Auth** (JWT + RBAC, incl. admin role/hospital
 assignment), **Hospitals**, **Medicines**, **Inventory** (batch tracking,
-FEFO), **Transfers** (propose → approve → complete, moves real stock),
-**Expiry** (risk scoring, naive heuristic today — swappable for an ML
-model in Milestone C behind the same interface), **Procurement**
-(suppliers + AI-recommended purchase orders, same swappable pattern),
-**Analytics** (KPI reporting), **Notifications** (alerts, raised
-internally by Inventory/Expiry). Forecast and Optimization land in
-Milestone C.
+FEFO), **Transfers** (propose → approve → complete, moves real stock,
+manual or AI-recommended), **Expiry** and **Procurement** (heuristic risk
+scoring/reorder logic, now fed a trained forecast signal when one exists —
+see [docs/architecture.md](docs/architecture.md)), **Forecast** (LightGBM
+quantile demand forecasting, trained on seeded consumption + weather
+history), **Optimization** (OR-Tools network transfer solver, admin-only —
+proposes and raises alerts for real transfers), **Assistant** (Groq LLM:
+explains any transfer/purchase-order recommendation in plain language,
+answers freeform ops questions grounded in live KPIs/alerts — never
+predicts a number itself), **Analytics** (KPI reporting), **Notifications**
+(alerts, raised internally by Inventory/Expiry/Optimization).
 
 ## Getting started
 
@@ -124,6 +130,33 @@ promote them, so that one bootstrap has to happen directly against the DB
 UPDATE users SET role_id = (SELECT id FROM roles WHERE name = 'admin') WHERE email = 'you@example.com';
 ```
 
+### Try the AI features
+
+Requires `GROQ_API_KEY` set in `docker/.env` for the assistant endpoints
+(get a free key at [console.groq.com](https://console.groq.com)); forecast
+and optimization need no external key. Use the seeded demo dataset above
+first — the forecaster needs consumption history to train on, and the
+optimizer needs a real surplus/deficit pair to find.
+
+```bash
+# Train (first call only, lazily) + generate a demand forecast
+curl -X POST "http://localhost:8000/api/v1/forecasts/generate/<hospital_id>/<medicine_id>?horizon_days=30" \
+  -H "Authorization: Bearer <token>"
+
+# Run the network transfer optimizer for one medicine (admin only)
+curl -X POST http://localhost:8000/api/v1/optimization/transfers/<medicine_id> \
+  -H "Authorization: Bearer <admin_token>"
+
+# Ask the assistant a freeform question, grounded in live KPIs/alerts
+curl -X POST http://localhost:8000/api/v1/assistant/chat \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"question": "What is my highest-risk medicine right now?"}'
+
+# Ask it to explain one specific recommendation, in plain language
+curl http://localhost:8000/api/v1/assistant/explain/transfer/<transfer_id> \
+  -H "Authorization: Bearer <token>"
+```
+
 ### Running tests
 
 ```bash
@@ -139,8 +172,8 @@ see `backend/tests/conftest.py`.
 |---|---|---|
 | A | Architecture, DB schema, Docker skeleton, Auth/Hospitals/Medicines (reference modules) | ✅ Done |
 | B | Inventory, Transfers, Expiry, Procurement, Analytics, Notifications + real-signal (FluView) + synthetic data pipeline | ✅ Done |
-| C | Forecasting (LightGBM → Chronos), expiry/shortage models, OR-Tools optimizer, Groq LLM explanation layer | Next |
-| D | Next.js dashboard: all 10 pages, charts, hospital map, AI Assistant chat | Planned |
+| C | LightGBM demand forecaster, OR-Tools transfer optimizer, forecast-fed Expiry/Procurement, Groq LLM explanation/assistant layer, Celery wiring | ✅ Done |
+| D | Next.js dashboard: all 10 pages, charts, hospital map, AI Assistant chat | Next |
 | E | Full docker-compose (+ frontend, nginx), GitHub Actions CI, full test/doc coverage | Planned |
 
 ## Documentation

@@ -25,6 +25,8 @@ dependencies = [
     "python-multipart>=0.0.12",
     "httpx>=0.27,<0.28",
     "python-dotenv>=1.0,<2.0",
+    "pandas>=2.2,<3.0",
+    "openai>=1.50,<2.0",
 ]
 
 [project.optional-dependencies]
@@ -35,6 +37,7 @@ dev = [
     "ruff>=0.7,<0.8",
     "mypy>=1.13,<2.0",
     "aiosqlite>=0.20,<0.21",
+    "pandas-stubs>=2.2,<3.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -56,6 +59,16 @@ python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
 exclude = ["alembic/"]
+# `forecasting`/`optimization` (the /ml package, see ml/pyproject.toml) are
+# pip-installed editable from ../ml — mypy_path makes them resolvable by
+# static analysis the same way Python resolves them at runtime.
+mypy_path = ["../ml"]
+
+[[tool.mypy.overrides]]
+# No type stubs published for these — real gaps in the ecosystem, not
+# something this project can fix.
+module = ["ortools.*", "sklearn.*", "celery.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

@@ -10,12 +10,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routers import (
     analytics,
+    assistant,
     auth,
     expiry,
+    forecast,
     hospitals,
     inventory,
     medicines,
     notifications,
+    optimization,
     procurement,
     transfers,
 )
@@ -70,6 +73,9 @@ def create_app() -> FastAPI:
     app.include_router(procurement.purchase_orders_router, prefix=settings.api_v1_prefix)
     app.include_router(notifications.router, prefix=settings.api_v1_prefix)
     app.include_router(analytics.router, prefix=settings.api_v1_prefix)
+    app.include_router(forecast.router, prefix=settings.api_v1_prefix)
+    app.include_router(optimization.router, prefix=settings.api_v1_prefix)
+    app.include_router(assistant.router, prefix=settings.api_v1_prefix)
 
     @app.get(f"{settings.api_v1_prefix}/health", tags=["Health"])
     async def health_check() -> dict[str, str]:

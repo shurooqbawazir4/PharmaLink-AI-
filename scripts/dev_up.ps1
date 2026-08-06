@@ -20,8 +20,8 @@ docker compose @composeArgs up -d db redis
 Write-Host "==> Applying migrations"
 docker compose @composeArgs run --rm backend alembic upgrade head
 
-Write-Host "==> Starting backend"
-docker compose @composeArgs up -d backend
+Write-Host "==> Starting backend + celery worker"
+docker compose @composeArgs up -d backend celery_worker
 
 Write-Host ""
 Write-Host "MedCycle AI backend is up:"
