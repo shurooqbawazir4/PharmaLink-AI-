@@ -267,11 +267,24 @@ repositories/services the synchronous HTTP endpoints use via `Depends` —
 Celery tasks can't participate in FastAPI's request-scoped DI graph, so
 they build an equivalent one by hand and call the *same* application-layer
 methods (`ForecastService.generate`, `OptimizationService.optimize_network`)
-rather than duplicating any business logic. A `celery_worker` service runs
-alongside `backend` in `docker-compose.yml`. Periodic/scheduled execution
-(celery beat) is deferred to Milestone E; today, tasks are triggered
-manually (`docker compose run --rm backend celery -A app.core.celery_app
-call optimization.run_network`).
+rather than duplicating any business logic. `celery_worker` and
+`celery_beat` services run alongside `backend` in `docker-compose.yml`;
+`celery_app.conf.beat_schedule` (Milestone E) runs a nightly forecast
+refresh followed by a network optimization pass, on top of the same tasks
+still being triggerable on demand (`docker compose run --rm backend
+celery -A app.core.celery_app call optimization.run_network`).
+
+## Deployment (Milestone E)
+
+`docker-compose.prod.yml` overlays the dev compose file: a standalone
+Next.js frontend build (no bind mount) fronted by nginx as the single
+`:80` entry point, instead of the dev file's hot-reload frontend with its
+own published port. GitHub Actions CI (`.github/workflows/ci.yml`) runs
+backend (`ruff`/`mypy`/`pytest`) and frontend (`lint`/`typecheck`/`test`)
+on every push/PR without Docker — both suites already run against
+in-memory/mocked dependencies (SQLite, Vitest/RTL), so plain pip/npm
+installs are enough. Full writeup, including a `!reset`-tag gotcha in the
+compose overlay worth knowing before extending it: `docs/deployment.md`.
 
 ## Frontend (Milestone D)
 

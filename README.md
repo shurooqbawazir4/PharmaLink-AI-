@@ -6,12 +6,10 @@ procurement across a hospital network, and explains every recommendation
 through an LLM assistant — built to reduce medicine waste and prevent
 stockouts.
 
-> Status: **Milestone D** complete — the full backend (Auth, Hospitals,
-> Medicines, Inventory, Transfers, Expiry, Procurement, Analytics,
-> Notifications), a real-signal + synthetic data pipeline, a seeded demo
-> dataset, a trained LightGBM demand forecaster, an OR-Tools network
-> transfer optimizer, a Groq-backed LLM explanation/assistant layer, and a
-> Next.js dashboard covering all 10 spec pages are live and tested. See
+> Status: **Milestone E** complete — the full backend, ML pipeline, LLM
+> layer, and Next.js dashboard from Milestones A–D, plus a production-shaped
+> deployment (standalone frontend build + nginx), a nightly celery beat
+> schedule, and GitHub Actions CI, are all live and tested. See
 > [Roadmap](#roadmap) below.
 
 ## Why
@@ -185,6 +183,14 @@ React Testing Library — see `frontend/tests/` and
 [docs/architecture.md](docs/architecture.md#frontend-milestone-d) for its
 scope.
 
+### Production-shaped deployment
+
+`./scripts/dev_up.sh` above runs the dev stack (hot-reload frontend, ports
+published for local access). For a standalone-build frontend behind nginx
+on a single `:80` entry point, layer the production overlay instead — see
+[docs/deployment.md](docs/deployment.md) for the full command and what it
+changes.
+
 ## Roadmap
 
 | Milestone | Scope | Status |
@@ -193,11 +199,12 @@ scope.
 | B | Inventory, Transfers, Expiry, Procurement, Analytics, Notifications + real-signal (FluView) + synthetic data pipeline | ✅ Done |
 | C | LightGBM demand forecaster, OR-Tools transfer optimizer, forecast-fed Expiry/Procurement, Groq LLM explanation/assistant layer, Celery wiring | ✅ Done |
 | D | Next.js dashboard: all 10 pages, charts, MapLibre hospital map, AI Assistant chat | ✅ Done |
-| E | Production frontend build + nginx, GitHub Actions CI, celery beat, full test/doc coverage | Next |
+| E | Production frontend build + nginx, GitHub Actions CI, celery beat, full test/doc coverage | ✅ Done |
 
 ## Documentation
 
 - [Architecture](docs/architecture.md)
 - [Database schema](docs/database.md)
+- [Deployment guide](docs/deployment.md)
 - [Data pipeline](data/README.md)
 - API docs: auto-generated OpenAPI at `/docs` once the backend is running

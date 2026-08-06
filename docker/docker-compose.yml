@@ -1,6 +1,7 @@
-# MedCycle AI — local development stack.
-# Frontend runs here in dev mode (Milestone D); a production build + nginx
-# reverse proxy, plus celery beat (scheduling), are added in Milestone E.
+# MedCycle AI — local development stack (dev-mode frontend, no nginx).
+# For a production-shaped stack (standalone frontend build + nginx reverse
+# proxy on :80), layer docker-compose.prod.yml on top — see
+# docs/deployment.md.
 #
 # Usage:
 #   cp docker/.env.example docker/.env   # then fill in secrets
@@ -82,10 +83,33 @@ services:
       redis:
         condition: service_healthy
 
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    container_name: medcycle_celery_beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-medcycle}:${POSTGRES_PASSWORD:-medcycle_dev_password}@db:5432/${POSTGRES_DB:-medcycle}
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.core.celery_app beat --loglevel=info
+    volumes:
+      - ../backend:/app/backend
+      - ../data:/app/data
+      - ../ml:/app/ml
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   frontend:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
+      target: dev
     container_name: medcycle_frontend
     restart: unless-stopped
     environment:

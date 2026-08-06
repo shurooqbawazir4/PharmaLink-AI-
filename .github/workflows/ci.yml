@@ -1,0 +1,53 @@
+name: CI
+
+# No Docker here on purpose: backend tests run against an in-memory SQLite
+# DB (backend/tests/conftest.py) and the frontend suite is pure Vitest/RTL —
+# neither needs Postgres/Redis, so plain pip/npm installs are faster and
+# cheaper than spinning up the full compose stack for every push.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install backend + ml (editable, dev extras)
+        run: pip install -e ".[dev]" -e ../ml
+
+      - run: ruff check .
+      - run: mypy .
+      - run: pytest -v
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test

@@ -2,14 +2,16 @@
 methods the sync API endpoints use (see infrastructure/tasks/), so there's
 no logic duplicated between the sync and async paths.
 
-Periodic scheduling (celery beat) is deferred to Milestone E's full
-integration pass — this milestone wires up a working worker + on-demand
-tasks, not a production cron schedule.
+Periodic scheduling (celery beat, Milestone E): a `celery_beat` process
+(docker-compose.yml) reads `beat_schedule` below and enqueues these same
+tasks on a timer — no separate scheduling logic, just the on-demand tasks
+Milestone C already wrote, triggered automatically instead of by hand.
 """
 
 from __future__ import annotations
 
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.config import settings
 
@@ -28,4 +30,18 @@ celery_app.conf.update(
     accept_content=["json"],
     timezone="UTC",
     enable_utc=True,
+    beat_schedule={
+        # Nightly, before the network-optimization run below, so
+        # optimization sees same-day-fresh forecasts.
+        "refresh-all-forecasts-nightly": {
+            "task": "forecast.refresh_all",
+            "schedule": crontab(hour=2, minute=0),
+        },
+        # A few hours later — spans the whole network per run (one
+        # medicine at a time is Milestone C's manual/API path).
+        "run-network-optimization-daily": {
+            "task": "optimization.run_network",
+            "schedule": crontab(hour=4, minute=0),
+        },
+    },
 )
