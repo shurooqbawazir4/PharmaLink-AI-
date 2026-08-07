@@ -38,3 +38,4 @@ data/synthetic/*.csv
 .idea/
 .DS_Store
 Thumbs.db
+celerybeat-schedule*
