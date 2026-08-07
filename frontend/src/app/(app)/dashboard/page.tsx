@@ -63,6 +63,7 @@ export default function DashboardPage() {
               label="Transfer success rate"
               value={kpis.transfer_success_rate !== null ? formatPercent(kpis.transfer_success_rate) : "—"}
               icon={TrendingUp}
+              hint={kpis.transfer_success_rate === null ? "No completed transfers yet" : undefined}
               tone="positive"
             />
             <KpiCard
