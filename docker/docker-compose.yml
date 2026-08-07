@@ -38,6 +38,19 @@ services:
       timeout: 5s
       retries: 10
 
+  # Dev-only DB browser — no auth wall of its own (relies on real Postgres
+  # credentials at login), so this is intentionally in the dev compose file
+  # only, not carried into docker-compose.prod.yml's nginx-fronted stack.
+  adminer:
+    image: adminer:latest
+    container_name: medcycle_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
   backend:
     build:
       context: ..

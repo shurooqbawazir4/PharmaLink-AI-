@@ -15,8 +15,8 @@ COMPOSE="docker compose -f docker/docker-compose.yml --env-file docker/.env"
 echo "==> Building images"
 $COMPOSE build
 
-echo "==> Starting db + redis"
-$COMPOSE up -d db redis
+echo "==> Starting db + redis + adminer"
+$COMPOSE up -d db redis adminer
 
 echo "==> Applying migrations"
 $COMPOSE run --rm backend alembic upgrade head
@@ -29,3 +29,4 @@ echo "MedCycle AI is up:"
 echo "  Dashboard: http://localhost:3000"
 echo "  API docs:  http://localhost:8000/docs"
 echo "  Health:    http://localhost:8000/api/v1/health"
+echo "  Adminer:   http://localhost:8080  (System: PostgreSQL, Server: db, User/DB: medcycle)"
