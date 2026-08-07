@@ -5,7 +5,6 @@ import {
   TrendingUp,
   Shuffle,
   Bell,
-  ShoppingCart,
   BarChart3,
   Leaf,
   MessageSquare,
@@ -21,7 +20,9 @@ export interface NavItem {
   description: string;
 }
 
-/** The spec's 10 dashboard pages, in the order they're listed there. */
+/** The dashboard's pages, in nav order. Procurement/Suppliers was removed
+ * from the UI for this demo (the backend module + API are untouched —
+ * ReceiveStockDialog still uses features/procurement's supplier list). */
 export const NAV_ITEMS: NavItem[] = [
   {
     href: "/dashboard",
@@ -43,27 +44,21 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/forecast",
-    label: "Forecast",
+    label: "Demand Forecast",
     icon: TrendingUp,
-    description: "LightGBM-predicted demand per hospital and medicine, with a confidence band.",
+    description: "Predicts how much of each medicine a hospital will need next, and why.",
   },
   {
     href: "/optimization",
-    label: "Optimization",
+    label: "Transfer Optimization",
     icon: Shuffle,
-    description: "Run the OR-Tools solver to find the best surplus-to-deficit hospital transfers.",
+    description: "Finds which hospital should send medicine to which — instead of it expiring unused.",
   },
   {
     href: "/alerts",
     label: "Alerts",
     icon: Bell,
     description: "Shortage, expiry, low-stock, and AI transfer-suggested notifications, in one queue.",
-  },
-  {
-    href: "/procurement",
-    label: "Procurement",
-    icon: ShoppingCart,
-    description: "AI-recommended purchase orders and the supplier catalogue.",
   },
   {
     href: "/analytics",

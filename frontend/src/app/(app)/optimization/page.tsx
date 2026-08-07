@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Shuffle } from "lucide-react";
+import { Scale, Shuffle } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -55,9 +55,23 @@ export default function OptimizationPage() {
   return (
     <div>
       <PageHeader
-        title="Optimization"
-        description="OR-Tools network transfer solver — surplus hospitals to deficit hospitals."
+        title="Transfer Optimization"
+        description="Instead of letting medicine expire unused at one hospital while another runs short, find the transfer that fixes both."
       />
+
+      <Card className="mb-4 border-primary/20 bg-primary/5">
+        <CardContent className="flex items-start gap-3 p-4">
+          <Scale className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">What a transfer is based on: </span>
+            for every hospital, this compares current stock and safety stock against the
+            forecasted demand from the Demand Forecast page. Hospitals with more than they need
+            (surplus) are matched to hospitals about to run short (deficit) by a real solver
+            (Google OR-Tools) that finds the transfer plan moving the most medicine at the lowest
+            transport cost — not a rule of thumb, an actual optimization problem, solved.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card className="mb-4">
         <CardHeader>

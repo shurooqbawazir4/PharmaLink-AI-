@@ -9,7 +9,6 @@ import {
   Database,
   Leaf,
   MessageSquare,
-  ShoppingCart,
   Shuffle,
   TrendingUp,
 } from "lucide-react";
@@ -45,17 +44,11 @@ const PIPELINE_STEPS = [
     icon: Shuffle,
     title: "4. Optimize transfers",
     description:
-      "An OR-Tools solver finds the specific hospital-to-hospital transfers that prevent the most waste and stockouts.",
-  },
-  {
-    icon: ShoppingCart,
-    title: "5. Recommend procurement",
-    description:
-      "When redistribution isn't enough, a purchase-order recommendation is raised — quantity, supplier, and cost.",
+      "Instead of one hospital's medicine expiring unused while another runs short, an OR-Tools solver finds the exact transfer that fixes both — at the lowest transport cost.",
   },
   {
     icon: MessageSquare,
-    title: "6. Explain every recommendation",
+    title: "5. Explain every recommendation",
     description:
       "A Groq-backed assistant narrates each decision in plain language — it never predicts a number, only explains one.",
   },
@@ -63,8 +56,8 @@ const PIPELINE_STEPS = [
 
 const FEATURE_PAGES = [
   { title: "Dashboard", body: "Network-wide overview: KPIs, top expiry risks, open alerts." },
-  { title: "Forecast", body: "Trained demand predictions per hospital and medicine." },
-  { title: "Optimization", body: "Real transfer recommendations, mapped and costed." },
+  { title: "Demand Forecast", body: "Trained demand predictions per hospital and medicine." },
+  { title: "Transfer Optimization", body: "Real transfer recommendations, mapped and costed." },
   { title: "Sustainability", body: "Real waste prevented, units redistributed, CO₂ estimate." },
 ];
 

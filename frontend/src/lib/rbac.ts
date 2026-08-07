@@ -21,14 +21,11 @@ function hasRole(role: Role | undefined | null, allowed: readonly Role[]): boole
 
 const STOCK_MANAGER_ROLES = ["admin", "hospital_manager", "pharmacist"] as const;
 const TRANSFER_MANAGER_ROLES = ["admin", "hospital_manager", "pharmacist"] as const;
-const PROCUREMENT_MANAGER_ROLES = ["admin", "hospital_manager", "pharmacist"] as const;
 const EXPIRY_MANAGER_ROLES = ["admin", "hospital_manager", "pharmacist"] as const;
 const FORECAST_MANAGER_ROLES = ["admin", "hospital_manager", "pharmacist"] as const;
 
 export const canManageInventory = (role: Role | undefined | null) => hasRole(role, STOCK_MANAGER_ROLES);
 export const canManageTransfers = (role: Role | undefined | null) => hasRole(role, TRANSFER_MANAGER_ROLES);
-export const canManageProcurement = (role: Role | undefined | null) =>
-  hasRole(role, PROCUREMENT_MANAGER_ROLES);
 export const canManageExpiry = (role: Role | undefined | null) => hasRole(role, EXPIRY_MANAGER_ROLES);
 export const canGenerateForecast = (role: Role | undefined | null) => hasRole(role, FORECAST_MANAGER_ROLES);
 

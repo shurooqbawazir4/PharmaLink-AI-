@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canManageHospitals,
-  canManageProcurement,
+  canManageTransfers,
   canRunOptimization,
   isAdmin,
   scopedHospitalId,
@@ -19,17 +19,17 @@ describe("isAdmin", () => {
 
 describe("role-gated helpers", () => {
   it("admin always passes regardless of the allowed list, mirroring require_role", () => {
-    expect(canManageProcurement("admin")).toBe(true);
+    expect(canManageTransfers("admin")).toBe(true);
     expect(canManageHospitals("admin")).toBe(true);
   });
 
-  it("pharmacist can manage procurement but not hospitals", () => {
-    expect(canManageProcurement("pharmacist")).toBe(true);
+  it("pharmacist can manage transfers but not hospitals", () => {
+    expect(canManageTransfers("pharmacist")).toBe(true);
     expect(canManageHospitals("pharmacist")).toBe(false);
   });
 
   it("viewer can manage neither", () => {
-    expect(canManageProcurement("viewer")).toBe(false);
+    expect(canManageTransfers("viewer")).toBe(false);
     expect(canManageHospitals("viewer")).toBe(false);
   });
 

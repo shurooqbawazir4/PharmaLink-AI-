@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Database, Sparkles } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,16 @@ export default function ForecastPage() {
   }, [medicines, medicineId]);
 
   // Admins must pick a hospital explicitly — there's no "network-wide"
-  // forecast, it's always for one hospital × medicine pair.
+  // forecast, it's always for one hospital × medicine pair. Auto-selecting
+  // the first hospital (same pattern as medicine, above) means the page
+  // shows a real forecast immediately instead of an empty "pick one" state.
+  const { hospitals, selected, setSelected } = scope;
+  useEffect(() => {
+    if (isAdmin(user?.role_name) && !selected && hospitals.length > 0) {
+      setSelected(hospitals[0]?.id ?? null);
+    }
+  }, [user?.role_name, hospitals, selected, setSelected]);
+
   const hospitalId = scope.hospitalId ?? (isAdmin(user?.role_name) ? scope.selected : null);
 
   const { data: forecasts = [] } = useForecasts({ hospitalId: hospitalId ?? undefined, medicineId });
@@ -51,9 +60,22 @@ export default function ForecastPage() {
   return (
     <div>
       <PageHeader
-        title="Forecast"
-        description="LightGBM demand forecasts, trained on real consumption + weather history."
+        title="Demand Forecast"
+        description="Predicts how much of each medicine a hospital will need next — and shows exactly what that prediction is based on."
       />
+
+      <Card className="mb-4 border-primary/20 bg-primary/5">
+        <CardContent className="flex items-start gap-3 p-4">
+          <Database className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">What this forecast is based on: </span>
+            this hospital&apos;s own recent consumption history for the medicine (day-of-week and
+            trend patterns included), plus real regional weather and flu-activity data (CDC
+            FluView). A LightGBM model trained on that history predicts demand for the horizon
+            below, with a confidence range rather than a single guess.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card className="mb-4">
         <CardHeader>
