@@ -5,8 +5,6 @@ import {
   TrendingUp,
   Shuffle,
   Bell,
-  BarChart3,
-  Leaf,
   MessageSquare,
   type LucideIcon,
 } from "lucide-react";
@@ -59,18 +57,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Alerts",
     icon: Bell,
     description: "Shortage, expiry, low-stock, and AI transfer-suggested notifications, in one queue.",
-  },
-  {
-    href: "/analytics",
-    label: "Analytics",
-    icon: BarChart3,
-    description: "Operational KPIs: waste, transfer success, inventory turnover, procurement spend.",
-  },
-  {
-    href: "/sustainability",
-    label: "Sustainability",
-    icon: Leaf,
-    description: "The redistribution story: real waste value prevented, units saved, CO₂ estimate.",
   },
   {
     href: "/assistant",

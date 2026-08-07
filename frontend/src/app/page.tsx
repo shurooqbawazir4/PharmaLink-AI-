@@ -58,7 +58,7 @@ const FEATURE_PAGES = [
   { title: "Dashboard", body: "Network-wide overview: KPIs, top expiry risks, open alerts." },
   { title: "Demand Forecast", body: "Trained demand predictions per hospital and medicine." },
   { title: "Transfer Optimization", body: "Real transfer recommendations, mapped and costed." },
-  { title: "Sustainability", body: "Real waste prevented, units redistributed, CO₂ estimate." },
+  { title: "AI Assistant", body: "Ask why a recommendation was made — grounded, never guessed." },
 ];
 
 export default function LandingPage() {
@@ -171,8 +171,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Leaf className="h-4 w-4" />
             <span className="text-sm">
-              Every number on the Sustainability page is real or clearly labeled as an
-              estimate — nothing here is fabricated to look impressive.
+              Every number on this dashboard is real or clearly labeled as an estimate —
+              nothing here is fabricated to look impressive.
             </span>
           </div>
           <Button asChild>
