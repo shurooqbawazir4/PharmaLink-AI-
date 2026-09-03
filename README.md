@@ -1,4 +1,4 @@
-# MedCycle AI
+# PharmaLink AI
 
 **AI-powered medication intelligence platform.** Predicts medication demand,
 flags expiry and shortage risk, recommends inventory transfers and
@@ -16,7 +16,7 @@ stockouts.
 
 Hospitals routinely sit on both shortages and surplus at the same time —
 one site is out of insulin while another three towns over is about to
-write off a batch to expiry. MedCycle AI forecasts demand per hospital per
+write off a batch to expiry. PharmaLink AI forecasts demand per hospital per
 medicine, scores expiry/shortage risk, and recommends *specific* transfers
 and purchase orders (with quantities, costs, and the waste/CO₂ they
 prevent) rather than generic dashboards.

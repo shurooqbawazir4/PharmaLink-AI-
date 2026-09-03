@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Bring up the MedCycle AI dev stack (db + redis + backend) and apply
+# Bring up the PharmaLink AI dev stack (db + redis + backend) and apply
 # migrations. Run from the repo root: ./scripts/dev_up.sh
 set -euo pipefail
 
@@ -25,7 +25,7 @@ echo "==> Starting backend + celery worker/beat + frontend"
 $COMPOSE up -d backend celery_worker celery_beat frontend
 
 echo
-echo "MedCycle AI is up:"
+echo "PharmaLink AI is up:"
 echo "  Dashboard: http://localhost:3000"
 echo "  API docs:  http://localhost:8000/docs"
 echo "  Health:    http://localhost:8000/api/v1/health"

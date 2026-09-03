@@ -1,8 +1,8 @@
-# MedCycle AI — Architecture
+# PharmaLink AI — Architecture
 
 ## Overview
 
-MedCycle AI is a medication intelligence platform: it forecasts demand,
+PharmaLink AI is a medication intelligence platform: it forecasts demand,
 flags expiry and shortage risk, recommends inventory transfers and
 procurement, and explains those recommendations through an LLM assistant.
 The backend follows **Clean Architecture** with **Domain-Driven Design**

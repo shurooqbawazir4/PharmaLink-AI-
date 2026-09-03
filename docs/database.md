@@ -1,4 +1,4 @@
-# MedCycle AI — Database Schema
+# PharmaLink AI — Database Schema
 
 PostgreSQL + the TimescaleDB extension. Single source of truth for the
 schema is `backend/app/infrastructure/db/models.py`; migrations live in

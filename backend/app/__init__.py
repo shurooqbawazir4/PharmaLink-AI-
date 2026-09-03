@@ -1,1 +1,1 @@
-"""MedCycle AI backend application package."""
+"""PharmaLink AI backend application package."""

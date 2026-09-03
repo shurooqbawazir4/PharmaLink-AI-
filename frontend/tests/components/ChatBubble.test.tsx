@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { ChatBubble } from "@/app/(app)/assistant/page";
+import { ChatBubble } from "@/features/assistant/components/ChatBubble";
 
 describe("ChatBubble", () => {
   it("renders a user message", () => {

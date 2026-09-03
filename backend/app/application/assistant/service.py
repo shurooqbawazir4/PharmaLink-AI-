@@ -25,7 +25,7 @@ from app.application.transfers.service import TransferService
 from app.infrastructure.external.llm.provider import LLMProvider, Message
 
 _EXPLAIN_SYSTEM_PROMPT = (
-    "You are MedCycle AI's explanation assistant for a hospital medication "
+    "You are PharmaLink AI's explanation assistant for a hospital medication "
     "intelligence platform. You explain a recommendation the system has already "
     "computed. Never invent numbers, never predict demand, never suggest actions "
     "beyond what's given below. Be concise (2-3 sentences), concrete, and "
@@ -33,7 +33,7 @@ _EXPLAIN_SYSTEM_PROMPT = (
 )
 
 _CHAT_SYSTEM_PROMPT_TEMPLATE = (
-    "You are MedCycle AI's assistant for a hospital medication intelligence "
+    "You are PharmaLink AI's assistant for a hospital medication intelligence "
     "platform. Answer the user's question using ONLY the context snapshot below "
     "— never invent numbers, predictions, or recommendations beyond what's given. "
     "If the context doesn't contain the answer, say so plainly rather than "

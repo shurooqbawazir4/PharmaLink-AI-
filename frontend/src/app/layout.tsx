@@ -4,7 +4,7 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MedCycle AI",
+  title: "PharmaLink AI",
   description: "AI-powered medication intelligence platform.",
 };
 

@@ -1,4 +1,4 @@
-# MedCycle AI — ML package
+# PharmaLink AI — ML package
 
 Plain, installable Python package (no FastAPI/SQLAlchemy imports) exposing
 typed functions/classes the backend calls directly — see

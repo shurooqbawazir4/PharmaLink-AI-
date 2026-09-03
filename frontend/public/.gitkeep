@@ -1,0 +1,4 @@
+This directory is intentionally kept in git (via this file) even though it's
+currently empty. Next.js's standalone production build (docker/Dockerfile.frontend's
+prod stage) copies public/ unconditionally — a missing directory fails that
+build step outright, which is exactly what happened before this file existed.

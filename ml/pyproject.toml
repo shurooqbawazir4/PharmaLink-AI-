@@ -1,7 +1,7 @@
 [project]
 name = "medcycle-ml"
 version = "0.1.0"
-description = "MedCycle AI ML package: demand forecasting + network transfer optimization."
+description = "PharmaLink AI ML package: demand forecasting + network transfer optimization."
 requires-python = ">=3.12"
 
 dependencies = [

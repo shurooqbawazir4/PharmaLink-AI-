@@ -105,7 +105,7 @@ export default function LandingPage() {
           to waste.
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-          MedCycle AI forecasts medication demand per hospital, scores expiry and shortage
+          PharmaLink AI forecasts medication demand per hospital, scores expiry and shortage
           risk, and recommends the specific transfers and purchase orders that prevent
           waste and stockouts — every recommendation explained in plain language, never a
           black box.
@@ -125,7 +125,7 @@ export default function LandingPage() {
       <section className="border-t border-border bg-muted/30 py-16">
         <div className="mx-auto max-w-6xl px-6">
           <div className="text-center">
-            <h2 className="text-2xl font-semibold tracking-tight">How MedCycle AI works</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">How PharmaLink AI works</h2>
             <p className="mt-2 text-muted-foreground">
               The same six steps, every time — from raw consumption data to a plain-language
               explanation.

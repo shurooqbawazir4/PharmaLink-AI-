@@ -1,26 +1,16 @@
-/** MedCycle AI's mark: a redistribution/cycle arrow around a medical
- * cross — "cycle" (moving stock between hospitals, closing the loop on
- * waste) + "med" in one glyph, rather than a generic pulse/heartbeat icon.
- * `currentColor` throughout so it inherits text color from its container
- * (the brand-blue badge in Sidebar/AuthLayout, or plain text on the
- * landing page's dark hero). */
+/** PharmaLink AI's connected-care mark, adapted from the supplied brand artwork. */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path
-        d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-      <path
-        d="M20.5 3.5v5h-5"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M9 12h6M12 9v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="12" r="4.3" fill="currentColor" />
+      <path d="M10 12h4M12 10v4" stroke="white" strokeWidth="1.6" />
+      <path d="M12 7.7V4.6M15.7 9.9l2.6-1.6M15.7 14.1l2.6 1.6M12 16.3v3.1M8.3 14.1l-2.6 1.6M8.3 9.9 5.7 8.3" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="12" cy="3.4" r="1.2" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="19.4" cy="7.6" r="1.2" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="19.4" cy="16.4" r="1.2" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="12" cy="20.6" r="1.2" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="4.6" cy="16.4" r="1.2" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="4.6" cy="7.6" r="1.2" stroke="currentColor" strokeWidth="1.2" />
     </svg>
   );
 }
@@ -35,10 +25,10 @@ export function Logo({
   return (
     <div className={className ?? "flex items-center gap-2"}>
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-        <LogoMark className="h-4.5 w-4.5" />
+        <LogoMark className="h-6 w-6" />
       </div>
       <span className={wordmarkClassName ?? "text-base font-semibold tracking-tight"}>
-        MedCycle AI
+        PharmaLink AI
       </span>
     </div>
   );

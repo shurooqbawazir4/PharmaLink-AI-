@@ -1,17 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, User } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/PageHeader";
 import { HospitalScopeSelect } from "@/components/layout/HospitalScopeSelect";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { ChatBubble } from "@/features/assistant/components/ChatBubble";
 import { useChat } from "@/features/assistant/hooks";
 import { useHospitalScope } from "@/hooks/useHospitalScope";
-import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/types";
 
 // The spec's own example questions — one click drops them into the input.
@@ -110,28 +109,6 @@ export default function AssistantPage() {
           </Button>
         </form>
       </Card>
-    </div>
-  );
-}
-
-export function ChatBubble({ message, pending = false }: { message: ChatMessage; pending?: boolean }) {
-  const isUser = message.role === "user";
-  return (
-    <div className={cn("flex items-start gap-3", isUser && "flex-row-reverse")}>
-      <Avatar>
-        <AvatarFallback className={isUser ? "bg-secondary" : "bg-primary/10 text-primary"}>
-          {isUser ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-        </AvatarFallback>
-      </Avatar>
-      <div
-        className={cn(
-          "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
-          isUser ? "bg-primary text-primary-foreground" : "bg-muted",
-          pending && "text-muted-foreground italic"
-        )}
-      >
-        {message.content}
-      </div>
     </div>
   );
 }

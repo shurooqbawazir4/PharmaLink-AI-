@@ -1,4 +1,4 @@
-# MedCycle AI — production-shaped overlay: standalone frontend build (no
+# PharmaLink AI — production-shaped overlay: standalone frontend build (no
 # bind mount, no dev deps) + nginx as the single entry point on :80. Layer
 # on top of docker-compose.yml rather than duplicating db/redis/backend:
 #

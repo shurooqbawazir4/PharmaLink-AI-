@@ -1,4 +1,4 @@
-# MedCycle AI — Deployment Guide
+# PharmaLink AI — Deployment Guide
 
 ## Two stacks, one base file
 

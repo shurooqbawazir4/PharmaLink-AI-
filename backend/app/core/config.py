@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     # --- App -------------------------------------------------------------
-    app_name: str = Field(default="MedCycle AI", alias="APP_NAME")
+    app_name: str = Field(default="PharmaLink AI", alias="APP_NAME")
     env: Literal["development", "staging", "production", "test"] = Field(
         default="development", alias="ENV"
     )

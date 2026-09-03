@@ -32,7 +32,7 @@ export function Topbar() {
   const { data: user } = useCurrentUser();
   const logout = useLogout();
 
-  const pageTitle = NAV_ITEMS.find((item) => pathname.startsWith(item.href))?.label ?? "MedCycle AI";
+  const pageTitle = NAV_ITEMS.find((item) => pathname.startsWith(item.href))?.label ?? "PharmaLink AI";
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6">

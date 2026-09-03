@@ -1,4 +1,4 @@
-# MedCycle AI — local development stack (dev-mode frontend, no nginx).
+# PharmaLink AI — local development stack (dev-mode frontend, no nginx).
 # For a production-shaped stack (standalone frontend build + nginx reverse
 # proxy on :80), layer docker-compose.prod.yml on top — see
 # docs/deployment.md.

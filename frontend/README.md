@@ -1,4 +1,4 @@
-# MedCycle AI — Frontend
+# PharmaLink AI — Frontend
 
 Next.js 15 (App Router) + React 19 + TypeScript + TailwindCSS + shadcn/ui +
 Framer Motion + TanStack Query + React Hook Form/Zod + Recharts + MapLibre GL.

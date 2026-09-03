@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate MedCycle AI's synthetic layer: hospitals, suppliers, medicines,
+"""Generate PharmaLink AI's synthetic layer: hospitals, suppliers, medicines,
 inventory, patients, consumption, and weather — everything public data
 can't provide (see data/README.md). Statistically anchored to the real
 FluView seasonality climatology built by build_processed.py: consumption

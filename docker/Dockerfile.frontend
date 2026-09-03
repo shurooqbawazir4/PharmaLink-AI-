@@ -1,4 +1,4 @@
-# MedCycle AI frontend — multi-stage: `dev` (Milestone D, unchanged) and
+# PharmaLink AI frontend — multi-stage: `dev` (Milestone D, unchanged) and
 # `prod` (Milestone E: Next.js standalone output, no bind mount, no
 # node_modules in the final image). docker-compose.yml uses `dev` by
 # default; docker-compose.prod.yml overrides the frontend service to build

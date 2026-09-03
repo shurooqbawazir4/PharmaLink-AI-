@@ -1,4 +1,4 @@
-# MedCycle AI — Cross-cutting integration tests
+# PharmaLink AI — Cross-cutting integration tests
 
 Backend-only integration/unit tests live in `backend/tests/` (see
 `docs/architecture.md`). This top-level directory is reserved for tests

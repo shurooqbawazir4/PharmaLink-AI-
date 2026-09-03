@@ -1,4 +1,4 @@
-# MedCycle AI — Data
+# PharmaLink AI — Data
 
 Real-signal ingestion + synthetic layer generation, run via the `pipeline`
 Docker service (its own minimal image — pandas/numpy/requests — kept

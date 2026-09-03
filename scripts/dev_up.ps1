@@ -1,4 +1,4 @@
-# Bring up the MedCycle AI dev stack (db + redis + backend) and apply
+# Bring up the PharmaLink AI dev stack (db + redis + backend) and apply
 # migrations. Run from the repo root: .\scripts\dev_up.ps1
 
 $ErrorActionPreference = "Stop"
@@ -24,7 +24,7 @@ Write-Host "==> Starting backend + celery worker/beat + frontend"
 docker compose @composeArgs up -d backend celery_worker celery_beat frontend
 
 Write-Host ""
-Write-Host "MedCycle AI is up:"
+Write-Host "PharmaLink AI is up:"
 Write-Host "  Dashboard: http://localhost:3000"
 Write-Host "  API docs:  http://localhost:8000/docs"
 Write-Host "  Health:    http://localhost:8000/api/v1/health"

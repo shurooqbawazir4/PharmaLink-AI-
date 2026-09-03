@@ -1,6 +1,6 @@
-# MedCycle AI — Backend
+# PharmaLink AI — Backend
 
-FastAPI service implementing MedCycle AI's Clean Architecture backend. See
+FastAPI service implementing PharmaLink AI's Clean Architecture backend. See
 [../docs/architecture.md](../docs/architecture.md) for the full layering
 write-up and [../docs/database.md](../docs/database.md) for the schema.
 

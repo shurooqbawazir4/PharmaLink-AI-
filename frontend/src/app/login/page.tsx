@@ -35,7 +35,7 @@ function LoginForm() {
   const onSubmit = (values: LoginForm) => login.mutate(values);
 
   return (
-    <AuthLayout title="Log in" description="Sign in to your MedCycle AI account.">
+    <AuthLayout title="Log in" description="Sign in to your PharmaLink AI account.">
       {justRegistered && (
         <p className="mb-4 rounded-md bg-success/15 px-3 py-2 text-sm text-success">
           Account created — log in below.

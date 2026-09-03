@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "medcycle-backend"
 version = "0.1.0"
-description = "MedCycle AI backend — medication intelligence platform API."
+description = "PharmaLink AI backend — medication intelligence platform API."
 requires-python = ">=3.12"
 readme = "README.md"
 license = { text = "Proprietary" }
