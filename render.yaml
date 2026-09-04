@@ -39,6 +39,8 @@ services:
     dockerContext: .
     healthCheckPath: /
     envVars:
+      - key: HOSTNAME
+        value: 0.0.0.0
       - key: NEXT_PUBLIC_API_URL
         value: https://medcycle-api-salem-bawazir.onrender.com/api/v1
 
