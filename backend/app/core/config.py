@@ -11,7 +11,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -35,6 +35,14 @@ class Settings(BaseSettings):
         default="postgresql+asyncpg://medcycle:medcycle_dev_password@localhost:5432/medcycle",
         alias="DATABASE_URL",
     )
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def use_async_postgres_driver(cls, value: object) -> object:
+        """Accept standard managed-host URLs with the app's async engine."""
+        if isinstance(value, str) and value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return value
 
     # --- Redis / Celery ------------------------------------------------------
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
