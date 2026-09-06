@@ -24,6 +24,8 @@ RUN pip install --upgrade pip && pip install -e /app/ml
 # volume-mounting ./backend over /app/backend for hot reload keeps working
 # without reinstalling (the editable install just points back at the tree).
 COPY backend /app/backend
+# Offline demo generator; generated local CSVs and real data are not bundled.
+COPY data/synthetic/generate.py /app/data/synthetic/generate.py
 WORKDIR /app/backend
 RUN pip install -e ".[dev]"
 

@@ -65,3 +65,21 @@ building the full compose stack.
 See `docker/.env.example` for the full list. The only one that must be real
 for the AI Assistant to answer live is `GROQ_API_KEY` — everything else has
 a working default for local/demo use. Never commit `docker/.env` (gitignored).
+
+### Render demo database initialization
+
+The Render blueprint sets `SEED_DEMO_DATA=true` on the API service.
+After migrations, startup generates an offline synthetic demo dataset and
+runs `scripts/seed_database.py` without `--reset`. Reference records are
+added only when missing; existing inventory causes volume-data loading to
+be skipped. Existing accounts and role permissions are not modified.
+
+The offline generator uses a synthetic seasonal curve, not observed FluView
+data. Local real-data generation still uses the existing pipeline by default.
+
+For an existing Render service, deploy this code and set
+`SEED_DEMO_DATA=true` in its environment (or sync the updated Blueprint).
+Redeploy the API. Logs should show hospital/medicine counts and `Done.`.
+Deploy the frontend too to receive UI changes. Set the flag to `false`
+after successful initialization if demo seeding is no longer needed.
+This loads demo data; it does not copy local accounts or database edits.

@@ -21,6 +21,7 @@ Output: data/synthetic/{hospitals,suppliers,medicines,inventory,patients,consump
 
 from __future__ import annotations
 
+import argparse
 import math
 import sys
 import uuid
@@ -123,7 +124,11 @@ _AGE_BAND_WEIGHTS = [0.12, 0.18, 0.25, 0.28, 0.17]
 _DIAGNOSIS_CODES = ["J06.9", "E11.9", "I10", "J45.9", "A09", "J18.9"]
 
 
-def load_seasonality() -> np.ndarray:
+def load_seasonality(*, demo: bool = False) -> np.ndarray:
+    if demo:
+        print("Demo mode: using synthetic seasonality, not observed FluView data.")
+        days = np.arange(1, 367)
+        return (1 + np.cos(2 * np.pi * (days - 15) / 366)) / 2
     if not PROCESSED_PATH.exists():
         print(f"{PROCESSED_PATH} not found — run build_processed.py first.", file=sys.stderr)
         sys.exit(1)
@@ -332,7 +337,10 @@ def write_csv(df: pd.DataFrame, name: str) -> None:
 
 def main() -> None:
     print(f"Generating synthetic layer (seed={SEED}, as of {TODAY.isoformat()}) ...")
-    seasonality = load_seasonality()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--demo", action="store_true", help="Use offline synthetic seasonality.")
+    args = parser.parse_args()
+    seasonality = load_seasonality(demo=args.demo)
 
     hospitals_df = pd.DataFrame([asdict(h) for h in HOSPITALS])
     hospitals_df["occupancy_rate"] = [round(rng.uniform(0.55, 0.95), 3) for _ in HOSPITALS]
