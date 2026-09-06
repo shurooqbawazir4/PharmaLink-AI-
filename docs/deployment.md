@@ -99,3 +99,17 @@ Viewer access is also explicit in the backend and frontend authorization
 helpers: both admin and viewer have full access even when an older database
 returns empty permissions. Revoking the wildcard alone no longer restricts
 viewers. Both the API and frontend must be deployed to apply this behavior.
+
+### Dashboard insights and assistant availability
+
+Demo seeding now evaluates inventory batches with the existing expiry scorer
+and creates low-stock notifications from actual stock and safety levels.
+It also initializes missing insights for previously seeded databases.
+Restarting does not duplicate existing evaluations or low-stock alerts.
+Keep SEED_DEMO_DATA=true for the API redeploy that applies this update.
+Transfer-success and waste metrics remain zero/empty until those events occur.
+
+For AI-generated assistant answers, set GROQ_API_KEY in the Render API
+environment and redeploy. Never commit API keys. If no key is configured
+or the provider is unavailable, the assistant returns a clearly labeled
+database summary rather than an error; this fallback is not generative AI.

@@ -6,7 +6,9 @@ OpenAI; see docs/architecture.md for why Groq was chosen and
 
 from __future__ import annotations
 
-from openai import AsyncOpenAI
+import logging
+
+from openai import APIError, AsyncOpenAI
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
@@ -25,9 +27,15 @@ _MAX_TOKENS = 600
 
 class GroqProvider:
     def __init__(self) -> None:
-        self._client = AsyncOpenAI(base_url=settings.groq_base_url, api_key=settings.groq_api_key)
+        self._client = (
+            AsyncOpenAI(base_url=settings.groq_base_url, api_key=settings.groq_api_key,
+                        timeout=20.0, max_retries=0)
+            if settings.groq_api_key else None
+        )
 
     async def complete(self, *, system_prompt: str, messages: list[Message]) -> str:
+        if self._client is None:
+            return self._summary(system_prompt, messages)
         chat_messages: list[ChatCompletionMessageParam] = [
             ChatCompletionSystemMessageParam(role="system", content=system_prompt),
         ]
@@ -41,10 +49,29 @@ class GroqProvider:
                     ChatCompletionUserMessageParam(role="user", content=message.content)
                 )
 
-        response = await self._client.chat.completions.create(
-            model=settings.groq_model,
-            messages=chat_messages,
-            temperature=_TEMPERATURE,
-            max_tokens=_MAX_TOKENS,
+        try:
+            response = await self._client.chat.completions.create(
+                model=settings.groq_model,
+                messages=chat_messages,
+                temperature=_TEMPERATURE,
+                max_tokens=_MAX_TOKENS,
+            )
+            return response.choices[0].message.content or self._summary(system_prompt, messages)
+        except APIError as exc:
+            logging.getLogger(__name__).warning(
+                "Assistant provider unavailable: %s", type(exc).__name__
+            )
+            return self._summary(system_prompt, messages)
+
+    @staticmethod
+    def _summary(system_prompt: str, messages: list[Message]) -> str:
+        """Transparent non-generative fallback, using only supplied database facts."""
+        marker = "--- Context snapshot ---"
+        if marker in system_prompt:
+            facts = system_prompt.split(marker, 1)[1].strip()
+        else:
+            facts = messages[-1].content.split("\n\n", 1)[0] if messages else ""
+        return (
+            "AI responses are currently unavailable. Here is a database summary, "
+            "not an AI-generated answer to your question:\n\n" + facts
         )
-        return response.choices[0].message.content or ""

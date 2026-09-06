@@ -34,6 +34,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.domain.shared.enums import HospitalType, InventoryChangeReason
+from app.infrastructure.db.demo_insights import initialize_insights
 from app.infrastructure.db.models import (
     ConsumptionModel,
     HospitalModel,
@@ -357,6 +358,9 @@ async def seed(*, reset: bool) -> None:
             await _seed_consumption(session, hospitals, medicines)
             await _seed_weather(session)
             await session.commit()
+
+    async with AsyncSessionLocal() as session:
+        await initialize_insights(session)
 
     print("Done.")
 
