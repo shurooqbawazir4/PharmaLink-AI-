@@ -83,3 +83,14 @@ Redeploy the API. Logs should show hospital/medicine counts and `Done.`.
 Deploy the frontend too to receive UI changes. Set the flag to `false`
 after successful initialization if demo seeding is no longer needed.
 This loads demo data; it does not copy local accounts or database edits.
+
+### Viewer full access
+
+Migration `b42f6e81d903` adds `"*"` to the viewer role permissions on existing
+and fresh databases. Render runs this migration automatically through
+`alembic upgrade head` in its API startup script. All viewer accounts,
+including new registrations, receive full administrative and network-wide
+access. No additional environment variable is required.
+
+Deploy the updated API and frontend, then log out and back in to refresh
+cached user permissions. The migration preserves other role permissions.
