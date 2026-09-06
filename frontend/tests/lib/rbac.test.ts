@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canGenerateForecast,
   canManageHospitals,
   canManageTransfers,
   canRunOptimization,
@@ -28,9 +29,9 @@ describe("role-gated helpers", () => {
     expect(canManageHospitals("pharmacist")).toBe(false);
   });
 
-  it("viewer can manage neither", () => {
-    expect(canManageTransfers("viewer")).toBe(false);
-    expect(canManageHospitals("viewer")).toBe(false);
+  it("viewer has full management access", () => {
+    expect(canManageTransfers("viewer")).toBe(true);
+    expect(canManageHospitals("viewer")).toBe(true);
   });
 
   it("optimization runs are admin-only regardless of any allowed-roles list", () => {
@@ -55,15 +56,17 @@ describe("database wildcard permissions", () => {
   it("grants a viewer all actions and network-wide scope", () => {
     const user = { role_name: "viewer", permissions: ["*"] };
     expect(isAdmin(user)).toBe(true);
+    expect(canGenerateForecast(user)).toBe(true);
     expect(canManageHospitals(user)).toBe(true);
     expect(canManageTransfers(user)).toBe(true);
     expect(canRunOptimization(user)).toBe(true);
     expect(scopedHospitalId(user, "own", "other")).toBe("other");
   });
-  it("keeps ordinary viewers restricted after revocation", () => {
+  it("grants viewers full access even without database wildcard", () => {
     const user = { role_name: "viewer", permissions: [] };
-    expect(isAdmin(user)).toBe(false);
-    expect(canRunOptimization(user)).toBe(false);
-    expect(scopedHospitalId(user, "own", "other")).toBe("own");
+    expect(isAdmin(user)).toBe(true);
+    expect(canGenerateForecast(user)).toBe(true);
+    expect(canRunOptimization(user)).toBe(true);
+    expect(scopedHospitalId(user, "own", "other")).toBe("other");
   });
 });

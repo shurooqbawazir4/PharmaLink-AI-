@@ -94,3 +94,8 @@ access. No additional environment variable is required.
 
 Deploy the updated API and frontend, then log out and back in to refresh
 cached user permissions. The migration preserves other role permissions.
+
+Viewer access is also explicit in the backend and frontend authorization
+helpers: both admin and viewer have full access even when an older database
+returns empty permissions. Revoking the wildcard alone no longer restricts
+viewers. Both the API and frontend must be deployed to apply this behavior.

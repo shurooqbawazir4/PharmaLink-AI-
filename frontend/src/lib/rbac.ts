@@ -11,8 +11,8 @@ type AccessSubject = Role | { role_name: string; permissions?: readonly string[]
 
 export function isAdmin(role: AccessSubject | undefined | null): boolean {
   return typeof role === "object" && role !== null
-    ? role.role_name === "admin" || !!role.permissions?.includes("*")
-    : role === "admin";
+    ? ["admin", "viewer"].includes(role.role_name) || !!role.permissions?.includes("*")
+    : role === "admin" || role === "viewer";
 }
 
 /** `require_role("admin", ...)` always passes admin regardless of the

@@ -70,7 +70,7 @@ async def test_me_returns_the_authenticated_user(client: AsyncClient) -> None:
     assert me_response.json()["email"] == "carol@medcycle.ai"
 
 
-async def test_viewer_cannot_create_hospital(client: AsyncClient) -> None:
+async def test_viewer_can_create_hospital(client: AsyncClient) -> None:
     await client.post(
         "/api/v1/auth/register",
         json={"email": "dave@medcycle.ai", "password": "supersecret123", "full_name": "Dave Doe"},
@@ -95,9 +95,9 @@ async def test_viewer_cannot_create_hospital(client: AsyncClient) -> None:
         },
     )
 
-    assert response.status_code == 403
+    assert response.status_code == 201
 
-async def test_viewer_wildcard_grant_and_revoke(client, session_factory):
+async def test_viewer_full_access_without_wildcard(client, session_factory):
     from sqlalchemy import select
 
     from app.infrastructure.db.models import RoleModel
@@ -110,7 +110,7 @@ async def test_viewer_wildcard_grant_and_revoke(client, session_factory):
         "email": "wildcard@medcycle.ai", "password": "supersecret123"
     })
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
-    for permissions, expected in [([], 403), (["*"], 200), ([], 403)]:
+    for permissions, expected in [([], 200), (["*"], 200), ([], 200)]:
         async with session_factory() as session:
             role = await session.scalar(select(RoleModel).where(RoleModel.name == "viewer"))
             role.permissions = permissions

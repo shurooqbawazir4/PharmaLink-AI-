@@ -32,4 +32,4 @@ class User:
 
     @property
     def has_full_access(self) -> bool:
-        return self.role_name == "admin" or "*" in self.permissions
+        return self.role_name in {"admin", "viewer"} or "*" in self.permissions
