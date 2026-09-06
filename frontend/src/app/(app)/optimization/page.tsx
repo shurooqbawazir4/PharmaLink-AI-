@@ -77,7 +77,7 @@ export default function OptimizationPage() {
         <CardHeader>
           <CardTitle>Run a network optimization</CardTitle>
           <CardDescription>
-            {canRunOptimization(user?.role_name)
+            {canRunOptimization(user)
               ? "Admin-only — spans the whole network, not one hospital."
               : "Viewing only — running an optimization is restricted to admins."}
           </CardDescription>
@@ -98,7 +98,7 @@ export default function OptimizationPage() {
               </SelectContent>
             </Select>
           </div>
-          {canRunOptimization(user?.role_name) && (
+          {canRunOptimization(user) && (
             <Button
               disabled={!medicineId || optimize.isPending}
               onClick={() => medicineId && optimize.mutate(medicineId)}

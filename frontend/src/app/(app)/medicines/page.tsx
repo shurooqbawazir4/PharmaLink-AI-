@@ -20,7 +20,7 @@ export default function MedicinesPage() {
   const { data: medicines = [], isLoading } = useMedicines();
   const updateCost = useUpdateMedicineUnitCost();
   const deactivate = useDeactivateMedicine();
-  const canManage = canManageMedicines(user?.role_name);
+  const canManage = canManageMedicines(user);
 
   return (
     <div>
@@ -97,7 +97,7 @@ export default function MedicinesPage() {
                             isPending={updateCost.isPending}
                             onSubmit={(unitCost) => updateCost.mutate({ id: medicine.id, unitCost })}
                           />
-                          {isAdmin(user?.role_name) && canDeleteMedicines(user?.role_name) && medicine.is_active && (
+                          {isAdmin(user) && canDeleteMedicines(user) && medicine.is_active && (
                             <Button
                               variant="ghost"
                               size="sm"

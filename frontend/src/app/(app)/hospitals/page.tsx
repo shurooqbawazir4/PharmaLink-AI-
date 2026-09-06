@@ -27,7 +27,7 @@ export default function HospitalsPage() {
       <PageHeader
         title="Hospitals"
         description="Network node registry — click a hospital to manage its inventory."
-        actions={canManageHospitals(user?.role_name) ? <HospitalFormDialog /> : undefined}
+        actions={canManageHospitals(user) ? <HospitalFormDialog /> : undefined}
       />
 
       <Card className="mb-4">

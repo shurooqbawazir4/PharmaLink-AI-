@@ -36,12 +36,12 @@ export default function ForecastPage() {
   // shows a real forecast immediately instead of an empty "pick one" state.
   const { hospitals, selected, setSelected } = scope;
   useEffect(() => {
-    if (isAdmin(user?.role_name) && !selected && hospitals.length > 0) {
+    if (isAdmin(user) && !selected && hospitals.length > 0) {
       setSelected(hospitals[0]?.id ?? null);
     }
-  }, [user?.role_name, hospitals, selected, setSelected]);
+  }, [user, hospitals, selected, setSelected]);
 
-  const hospitalId = scope.hospitalId ?? (isAdmin(user?.role_name) ? scope.selected : null);
+  const hospitalId = scope.hospitalId ?? (isAdmin(user) ? scope.selected : null);
 
   const { data: forecasts = [] } = useForecasts({ hospitalId: hospitalId ?? undefined, medicineId });
   const { data: latest } = useLatestForecast(hospitalId ?? undefined, medicineId);
@@ -82,7 +82,7 @@ export default function ForecastPage() {
           <CardTitle>Select a pair</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-4">
-          {isAdmin(user?.role_name) && (
+          {isAdmin(user) && (
             <div className="flex flex-col gap-1.5">
               <Label>Hospital</Label>
               <Select value={scope.selected ?? undefined} onValueChange={scope.setSelected}>
@@ -126,7 +126,7 @@ export default function ForecastPage() {
               className="w-28"
             />
           </div>
-          {canGenerateForecast(user?.role_name) && (
+          {canGenerateForecast(user) && (
             <Button
               disabled={!hospitalId || !medicineId || generate.isPending}
               onClick={() => hospitalId && medicineId && generate.mutate({ hospitalId, medicineId, horizonDays })}

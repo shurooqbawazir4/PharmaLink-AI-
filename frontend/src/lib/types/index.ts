@@ -22,6 +22,7 @@ export interface UserRead {
   email: string;
   full_name: string;
   role_name: string;
+  permissions?: string[];
   is_active: boolean;
   hospital_id: string | null;
   created_at: string;

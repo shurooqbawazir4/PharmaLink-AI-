@@ -50,3 +50,20 @@ describe("scopedHospitalId", () => {
     expect(scopedHospitalId("pharmacist", "hospital-1", null)).toBe("hospital-1");
   });
 });
+
+describe("database wildcard permissions", () => {
+  it("grants a viewer all actions and network-wide scope", () => {
+    const user = { role_name: "viewer", permissions: ["*"] };
+    expect(isAdmin(user)).toBe(true);
+    expect(canManageHospitals(user)).toBe(true);
+    expect(canManageTransfers(user)).toBe(true);
+    expect(canRunOptimization(user)).toBe(true);
+    expect(scopedHospitalId(user, "own", "other")).toBe("other");
+  });
+  it("keeps ordinary viewers restricted after revocation", () => {
+    const user = { role_name: "viewer", permissions: [] };
+    expect(isAdmin(user)).toBe(false);
+    expect(canRunOptimization(user)).toBe(false);
+    expect(scopedHospitalId(user, "own", "other")).toBe("own");
+  });
+});

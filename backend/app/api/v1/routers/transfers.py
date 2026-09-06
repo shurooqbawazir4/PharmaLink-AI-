@@ -28,7 +28,7 @@ def _require_source_or_destination(user: User, transfer: Transfer) -> None:
     """Cancel is the one action either side of a transfer may take — approve
     and complete are source-hospital actions (they're the one releasing
     stock), gated by `require_own_hospital_or_admin` on `source_hospital_id`."""
-    if user.role_name == "admin":
+    if user.has_full_access:
         return
     if user.hospital_id not in (transfer.source_hospital_id, transfer.destination_hospital_id):
         raise ForbiddenError(

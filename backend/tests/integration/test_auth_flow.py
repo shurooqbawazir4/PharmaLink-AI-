@@ -96,3 +96,29 @@ async def test_viewer_cannot_create_hospital(client: AsyncClient) -> None:
     )
 
     assert response.status_code == 403
+
+async def test_viewer_wildcard_grant_and_revoke(client, session_factory):
+    from sqlalchemy import select
+
+    from app.infrastructure.db.models import RoleModel
+
+    response = await client.post("/api/v1/auth/register", json={
+        "email": "wildcard@medcycle.ai", "password": "supersecret123", "full_name": "Wildcard"
+    })
+    user_id = response.json()["id"]
+    login = await client.post("/api/v1/auth/login", json={
+        "email": "wildcard@medcycle.ai", "password": "supersecret123"
+    })
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+    for permissions, expected in [([], 403), (["*"], 200), ([], 403)]:
+        async with session_factory() as session:
+            role = await session.scalar(select(RoleModel).where(RoleModel.name == "viewer"))
+            role.permissions = permissions
+            await session.commit()
+        me = await client.get("/api/v1/auth/me", headers=headers)
+        assert me.json()["permissions"] == permissions
+        assert me.json()["role_name"] == "viewer"
+        result = await client.patch(
+            f"/api/v1/auth/users/{user_id}", headers=headers, json={"clear_hospital": True}
+        )
+        assert result.status_code == expected

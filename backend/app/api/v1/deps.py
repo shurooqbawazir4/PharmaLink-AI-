@@ -46,7 +46,7 @@ def require_role(*allowed_roles: str) -> Callable[[User], Coroutine[Any, Any, Us
     """
 
     async def _check(user: CurrentUser) -> User:
-        if user.role_name == "admin" or user.role_name in allowed_roles:
+        if user.has_full_access or user.role_name in allowed_roles:
             return user
         raise ForbiddenError(
             f"Role '{user.role_name}' is not permitted to perform this action "
@@ -70,7 +70,7 @@ def require_own_hospital_or_admin(user: User, hospital_id: UUID) -> None:
     whichever hospital id is actually in scope for that request, right
     after resolving `CurrentUser`.
     """
-    if user.role_name == "admin":
+    if user.has_full_access:
         return
     if user.hospital_id != hospital_id:
         raise ForbiddenError(

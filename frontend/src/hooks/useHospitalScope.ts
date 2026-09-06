@@ -15,8 +15,8 @@ export function useHospitalScope() {
   const { data: hospitals = [] } = useHospitals();
   const [selected, setSelected] = useState<string | null>(null);
 
-  const admin = isAdmin(user?.role_name);
-  const hospitalId = scopedHospitalId(user?.role_name, user?.hospital_id, selected);
+  const admin = isAdmin(user);
+  const hospitalId = scopedHospitalId(user, user?.hospital_id, selected);
 
   return {
     hospitalId,

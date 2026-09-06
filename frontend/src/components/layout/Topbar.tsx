@@ -44,7 +44,7 @@ export function Topbar() {
       <div className="flex items-center gap-3">
         {user && (
           <Badge variant="outline" className="hidden sm:inline-flex">
-            {isAdmin(user.role_name) ? "Network-wide" : "Hospital-scoped"}
+            {isAdmin(user) ? "Network-wide" : "Hospital-scoped"}
           </Badge>
         )}
         <ThemeToggle />

@@ -105,7 +105,7 @@ function OverviewTab({ hospital }: { hospital: HospitalRead }) {
         </Badge>
       </div>
 
-      {canManageHospitals(user?.role_name) && (
+      {canManageHospitals(user) && (
         <div className="col-span-2 flex items-end gap-2 border-t border-border pt-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-muted-foreground" htmlFor="occupancy">
@@ -132,7 +132,7 @@ function OverviewTab({ hospital }: { hospital: HospitalRead }) {
           >
             Save
           </Button>
-          {canDeleteHospitals(user?.role_name) && hospital.is_active && (
+          {canDeleteHospitals(user) && hospital.is_active && (
             <Button
               size="sm"
               variant="outline"
@@ -156,7 +156,7 @@ function InventoryTab({ hospital }: { hospital: HospitalRead }) {
   const consume = useConsumeStock();
   const writeOff = useWriteOffExpired();
   const adjust = useAdjustStock();
-  const canManage = canManageInventory(user?.role_name);
+  const canManage = canManageInventory(user);
 
   return (
     <div>
@@ -256,7 +256,7 @@ function ExpiryTab({ hospital }: { hospital: HospitalRead }) {
         <p className="text-xs text-muted-foreground">
           {risks.length} batch{risks.length === 1 ? "" : "es"} evaluated.
         </p>
-        {canManageInventory(user?.role_name) && (
+        {canManageInventory(user) && (
           <Button
             size="sm"
             variant="secondary"

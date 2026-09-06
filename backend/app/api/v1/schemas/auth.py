@@ -48,6 +48,8 @@ class UserAdminUpdateRequest(BaseModel):
 
 
 class UserRead(BaseModel):
+    permissions: list[str] = Field(default_factory=list)
+
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

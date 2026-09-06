@@ -45,7 +45,7 @@ async def chat(
     # Non-admins are always scoped to their own hospital, regardless of
     # what they pass — never another hospital's alerts/KPIs.
     hospital_id = (
-        payload.hospital_id if current_user.role_name == "admin" else current_user.hospital_id
+        payload.hospital_id if current_user.has_full_access else current_user.hospital_id
     )
 
     history = [Message(role=m.role, content=m.content) for m in payload.history]

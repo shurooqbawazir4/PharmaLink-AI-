@@ -51,7 +51,7 @@ class SQLAlchemyUserRepository:
         )
         self._db.add(model)
         await self._db.flush()
-        return self._to_entity(model, role_name=role.name)
+        return self._to_entity(model, role=role)
 
     async def update(self, user: User) -> User:
         role = await self._db.scalar(select(RoleModel).where(RoleModel.name == user.role_name))
@@ -67,7 +67,7 @@ class SQLAlchemyUserRepository:
         model.hospital_id = user.hospital_id
         model.is_active = user.is_active
         await self._db.flush()
-        return self._to_entity(model, role_name=role.name)
+        return self._to_entity(model, role=role)
 
     async def list_by_hospital(self, hospital_id: UUID) -> list[User]:
         stmt = (
@@ -79,13 +79,14 @@ class SQLAlchemyUserRepository:
         return [self._to_entity(model) for model in result]
 
     @staticmethod
-    def _to_entity(model: UserModel, *, role_name: str | None = None) -> User:
+    def _to_entity(model: UserModel, *, role: RoleModel | None = None) -> User:
         return User(
             id=model.id,
             email=model.email,
             hashed_password=model.hashed_password,
             full_name=model.full_name,
-            role_name=role_name or model.role.name,
+            role_name=(role or model.role).name,
+            permissions=list((role or model.role).permissions or []),
             is_active=model.is_active,
             created_at=model.created_at,
             hospital_id=model.hospital_id,

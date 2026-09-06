@@ -27,3 +27,9 @@ class User:
     is_active: bool
     created_at: datetime
     hospital_id: UUID | None = None
+
+    permissions: list[str] = field(default_factory=list)
+
+    @property
+    def has_full_access(self) -> bool:
+        return self.role_name == "admin" or "*" in self.permissions
